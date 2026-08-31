@@ -1,49 +1,66 @@
 (ns dactyl-keyboard.dactyl
-    (:refer-clojure :exclude [use import])
-    (:require [clojure.core.matrix :refer [array matrix mmul]]
-              [scad-clj.scad :refer :all]
-              [scad-clj.model :refer :all]
-              [unicode-math.core :refer :all]))
+	(:refer-clojure :exclude [use import])
+	(:require
+		[clojure.core.matrix :refer [array matrix mmul]]
+		[scad-clj.scad :refer :all]
+		[scad-clj.model :refer :all]
+		[unicode-math.core :refer :all]
+	)
+)
 
 
 (defn deg2rad [degrees]
-  (* (/ degrees 180) pi))
+	(* (/ degrees 180) pi)
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape parameters ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
 (def nrows 5)
-(def ncols 7)
+(def ncols 5)
 
-(def α (/ π 12))                       ; curvature of the columns
-(def β (/ π 36))                       ; curvature of the rows
+(def α (/ π (- 12 6)))                       ; curvature of the columns
+(def β (/ π (+ 36 0)))                       ; curvature of the rows
+
 (def centerrow (- nrows 3))            ; controls front-back tilt
 (def centercol 4)                      ; controls left-right tilt / tenting (higher number is more tenting)
-(def tenting-angle (/ π 12))           ; or, change this for more precise tenting control
+(def tenting-angle (/ π 100))           ; or, change this for more precise tenting control
 
-(def pinky-15u true)                   ; controls whether the outer column uses 1.5u keys
+(def pinky-15u false)                   ; controls whether the outer column uses 1.5u keys
 (def first-15u-row 0)                  ; controls which should be the first row to have 1.5u keys on the outer column
 (def last-15u-row 3)                   ; controls which should be the last row to have 1.5u keys on the outer column
 
 (def extra-row true)                   ; adds an extra bottom row to the outer column(s)
 (def inner-column true)                ; adds an extra inner column (two less rows than nrows)
-(def thumb-style "cf")                 ; toggles between "manuform", "mini", and "cf" thumb cluster
+(def thumb-style "handshake")                 ; toggles between "manuform", "mini", "cf", and "handshake" thumb cluster
 
 (def column-style :standard)
 
-(defn column-offset [column]
-  (if inner-column
-    (cond (<= column 1) [0 -2 0]
-          (= column 3) [0 2.82 -4.5]
-          (>= column 5) [0 -12 5.64]   ; original [0 -5.8 5.64]
-          :else [0 0 0])
-    (cond (= column 0) [0 -2 0]
-		  (= column 2) [0 2.82 -4.5]
-          (>= column 4) [0 -12 5.64]   ; original [0 -5.8 5.64]
-          :else [0 0 0])))
+(def column-offset-disable true)
 
-(def thumb-offsets [6 -3 7])
+(defn column-offset [column]
+	(cond
+		(= column-offset-disable true) [0 0 0]
+		(= inner-column true)
+			(cond
+				(<= column 1) [0 -2 0]
+				(= column 3) [0 2.82 -4.5]
+				(>= column 5) [0 -12 5.64]   ; original [0 -5.8 5.64]
+				:else [0 0 0]
+			)
+
+		:else
+			(cond
+				(= column 0) [0 -2 0]
+				(= column 2) [0 2.82 -4.5]
+				(>= column 4) [0 -12 5.64]   ; original [0 -5.8 5.64]
+				:else [0 0 0]
+			)
+	)
+)
+
+(def thumb-offsets [0 0 0])
 
 (def keyboard-z-offset 8)              ; controls overall height; original=9 with centercol=3; use 16 for centercol=2
 
@@ -56,7 +73,7 @@
 
 ; If you use Cherry MX or Gateron switches, this can be turned on.
 ; If you use other switches such as Kailh, you should set this as false
-(def create-side-nubs? false)
+(def create-side-nubs? true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; General variables ;;
@@ -236,7 +253,8 @@
                :when (or (.contains [(+ innercol-offset 2) (+ innercol-offset 3)] column)
                          (and (.contains [(+ innercol-offset 4) (+ innercol-offset 5)] column) extra-row (= ncols (+ innercol-offset 6)))
                          (and (.contains [(+ innercol-offset 4)] column) extra-row (= ncols (+ innercol-offset 5)))
-                         (and inner-column (not= row cornerrow)(= column 0))
+                         ;;(and inner-column (not= row cornerrow)(= column 0))
+                         inner-column;; (not= row cornerrow)(= column 0))
                          (not= row lastrow))]
            (->> single-plate
                 ;                (rotate (/ π 2) [0 0 1])
@@ -402,8 +420,15 @@
 ;;;;;;;;;;;;;;;;;;;;
 
 (def thumborigin
-  (map + (key-position (+ innercol-offset 1) cornerrow [(/ mount-width 2) (- (/ mount-height 2)) 0])
-       thumb-offsets))
+	(map +
+		(key-position
+			(+ innercol-offset 1)
+			cornerrow
+			[(/ mount-width 2) (- (/ mount-height 2)) 0]
+		)
+		thumb-offsets
+	)
+)
 
 (defn thumb-tr-place [shape]
   (->> shape
@@ -754,7 +779,7 @@
 
 (defn cfthumb-tl-place [shape]
   (->> shape
-       (rotate (deg2rad  10) [1 0 0])
+       (rotate (deg2rad  20) [1 0 0])
        (rotate (deg2rad -24) [0 1 0])
        (rotate (deg2rad  10) [0 0 1])
        (translate thumborigin)
@@ -924,6 +949,274 @@
        (key-place (+ innercol-offset 3) cornerrow web-post-br)
        (key-place (+ innercol-offset 4) cornerrow web-post-bl))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;
+;;  Handshake Thumb  ;;
+;;;;;;;;;;;;;;;;;;;;;;
+
+(def handshake-thumborigin
+	(map +
+		(key-position
+			(+ innercol-offset 1)
+			cornerrow
+			[(- 0 (* mount-width 3)) (- 0 (* mount-height 2)) 20]
+		)
+		thumb-offsets
+	)
+)
+
+(def handshake-thumborigin-width-offset -27)
+(def handshake-thumborigin-height-offset 20)
+(def handshake-thumborigin-depth-offset 2)
+
+(defn handshakethumb-origin-transform [y x z shape]
+	(->> shape
+		(translate
+			[
+				(* x handshake-thumborigin-width-offset)
+				(* y handshake-thumborigin-height-offset)
+				(* z handshake-thumborigin-depth-offset)
+			]
+		)
+		(rotate (deg2rad 75) [1 0 0])
+		(rotate (deg2rad -80) [0 0 1])
+		(translate handshake-thumborigin)
+	)
+)
+
+(defn handshakethumb-00-place [shape]
+	(->> shape
+		(rotate (deg2rad 0) [1 0 0])
+		(rotate (deg2rad 0) [0 1 0])
+		(rotate (deg2rad 90) [0 0 1])
+		(handshakethumb-origin-transform 0 0 0)
+	)
+)
+
+(defn handshakethumb-01-place [shape]
+	(->> shape
+		(rotate (deg2rad 0) [1 0 0])
+		(rotate (deg2rad 10) [0 1 0])
+		(rotate (deg2rad 0) [0 0 1])
+		(handshakethumb-origin-transform 0 1 1)
+	)
+)
+(defn handshakethumb-10-place [shape]
+	(->> shape
+		(rotate (deg2rad 0) [1 0 0])
+		(rotate (deg2rad 0) [0 1 0])
+		(rotate (deg2rad 90) [0 0 1])
+		(handshakethumb-origin-transform 1 0 0)
+	)
+)
+(defn handshakethumb-11-place [shape]
+	(->> shape
+		(rotate (deg2rad 0) [1 0 0])
+		(rotate (deg2rad 10) [0 1 0])
+		(rotate (deg2rad 0) [0 0 1])
+		(handshakethumb-origin-transform 1 1 1)
+	)
+)
+(defn handshakethumb-20-place [shape]
+	(->> shape
+		(rotate (deg2rad 90) [0 0 1])
+		(rotate (deg2rad 0) [0 1 0])
+		(rotate (deg2rad 0) [1 0 0])
+		(handshakethumb-origin-transform 2 0 0)
+	)
+)
+(defn handshakethumb-21-place [shape]
+	(->> shape
+		(rotate (deg2rad 0) [0 0 1])
+		(rotate (deg2rad 10) [0 1 0])
+		(rotate (deg2rad 0) [1 0 0])
+		(handshakethumb-origin-transform 2 1 1)
+	)
+)
+
+(defn handshakethumb-1x-layout [shape]
+	(union
+		(handshakethumb-01-place shape)
+		(handshakethumb-11-place shape)
+		(handshakethumb-21-place shape)
+	)
+)
+
+(defn handshakethumb-15x-layout [shape]
+	(union
+		(handshakethumb-00-place shape)
+		(handshakethumb-10-place shape)
+		(handshakethumb-20-place shape)
+	)
+)
+
+(def handshakethumbcaps
+	(union
+		(handshakethumb-1x-layout (sa-cap 1))
+		(handshakethumb-15x-layout (rotate (/ π 2) [0 0 1] (sa-cap 1.5)))
+	)
+)
+
+(def handshakethumbcaps-fill
+	(union
+		(handshakethumb-1x-layout keyhole-fill)
+		(handshakethumb-15x-layout (rotate (/ π 2) [0 0 1] keyhole-fill))
+	)
+)
+
+(def handshakethumb
+	(union
+		(handshakethumb-1x-layout single-plate)
+		(handshakethumb-15x-layout larger-plate-half)
+		(handshakethumb-15x-layout single-plate)
+	)
+)
+
+(def handshakethumb-connectors
+	(union
+		(triangle-hulls    ; 21 <-> 20
+			(handshakethumb-21-place web-post-br)
+			(handshakethumb-21-place web-post-tr)
+			(handshakethumb-20-place thumb-post-tl)
+			(handshakethumb-20-place thumb-post-tr)
+		)
+		(triangle-hulls    ; 11 <-> 10
+			(handshakethumb-11-place web-post-br)
+			(handshakethumb-11-place web-post-tr)
+			(handshakethumb-10-place thumb-post-tl)
+			(handshakethumb-10-place thumb-post-tr)
+		)
+		(triangle-hulls    ; 01 <-> 00
+			(handshakethumb-01-place web-post-br)
+			(handshakethumb-01-place web-post-tr)
+			(handshakethumb-00-place thumb-post-tl)
+			(handshakethumb-00-place thumb-post-tr)
+		)
+		(triangle-hulls    ; 21 <-> 11 (corners on to 20 and 10)
+			(handshakethumb-20-place thumb-post-tl)
+			(handshakethumb-21-place web-post-bl)
+			(handshakethumb-10-place thumb-post-tr)
+			(handshakethumb-11-place web-post-tl)
+		)
+		(triangle-hulls    ; 11 <-> 01 (corners on to 10 and 00)
+			(handshakethumb-10-place thumb-post-tl)
+			(handshakethumb-11-place web-post-bl)
+			(handshakethumb-00-place thumb-post-tr)
+			(handshakethumb-01-place web-post-tl)
+		)
+		(triangle-hulls    ; 20 <-> 10
+			(handshakethumb-20-place thumb-post-tl)
+			(handshakethumb-20-place web-post-bl)
+			(handshakethumb-10-place thumb-post-tr)
+			(handshakethumb-10-place web-post-br)
+		)
+		(triangle-hulls    ; 10 <-> 00
+			(handshakethumb-10-place thumb-post-tl)
+			(handshakethumb-10-place web-post-bl)
+			(handshakethumb-00-place thumb-post-tr)
+			(handshakethumb-00-place web-post-br)
+		)
+	)
+)
+;;	(union
+;;   (triangle-hulls    ; top two
+;;    (handshakethumb-00-place web-post-tl)
+;;    (handshakethumb-00-place web-post-bl)
+;;    (handshakethumb-10-place thumb-post-tr)
+;;    (handshakethumb-10-place web-post-br))
+;;   (triangle-hulls
+;;    (handshakethumb-10-place thumb-post-tl)
+;;    (handshakethumb-10-place web-post-bl)
+;;    (handshakethumb-21-place thumb-post-tr)
+;;    (handshakethumb-21-place web-post-br))
+;;   (triangle-hulls    ; bottom two
+;;    (handshakethumb-20-place web-post-tr)
+;;    (handshakethumb-20-place web-post-br)
+;;    (handshakethumb-11-place web-post-tl)
+;;    (handshakethumb-11-place web-post-bl))
+;;   (triangle-hulls
+;;    (handshakethumb-11-place web-post-tr)
+;;    (handshakethumb-11-place web-post-br)
+;;    (handshakethumb-01-place web-post-tl)
+;;    (handshakethumb-01-place web-post-bl))
+;;   (triangle-hulls
+;;    (handshakethumb-01-place web-post-br)
+;;    (handshakethumb-01-place web-post-bl)
+;;    (handshakethumb-11-place web-post-br))
+;;   (triangle-hulls    ; between top row and bottom row
+;;    (handshakethumb-20-place web-post-tl)
+;;    (handshakethumb-21-place web-post-bl)
+;;    (handshakethumb-20-place web-post-tr)
+;;    (handshakethumb-21-place web-post-br)
+;;    (handshakethumb-11-place web-post-tl)
+;;    (handshakethumb-10-place web-post-bl)
+;;    (handshakethumb-11-place web-post-tr)
+;;    (handshakethumb-10-place web-post-br)
+;;    (handshakethumb-01-place web-post-tl)
+;;    (handshakethumb-00-place web-post-bl)
+;;    (handshakethumb-01-place web-post-tr)
+;;    (handshakethumb-00-place web-post-br))
+;;   (triangle-hulls    ; top two to the main keyboard, starting on the left
+;;    (handshakethumb-10-place thumb-post-tl)
+;;    (key-place (+ innercol-offset 0) cornerrow web-post-bl)
+;;    (handshakethumb-10-place thumb-post-tr)
+;;    (key-place (+ innercol-offset 0) cornerrow web-post-br)
+;;    (handshakethumb-00-place web-post-tl)
+;;    (key-place (+ innercol-offset 1) cornerrow web-post-bl)
+;;    (handshakethumb-00-place web-post-tr)
+;;    (key-place (+ innercol-offset 1) cornerrow web-post-br)
+;;    (key-place (+ innercol-offset 2) lastrow web-post-tl)
+;;    (key-place (+ innercol-offset 2) lastrow web-post-bl)
+;;    (handshakethumb-00-place web-post-tr)
+;;    (key-place (+ innercol-offset 2) lastrow web-post-bl)
+;;    (handshakethumb-00-place web-post-br)
+;;    (key-place (+ innercol-offset 2) lastrow web-post-br)
+;;    (key-place (+ innercol-offset 3) lastrow web-post-bl)
+;;    (handshakethumb-00-place web-post-br)
+;;    (handshakethumb-01-place web-post-tr))
+;;   (triangle-hulls
+;;    (key-place (+ innercol-offset 3) lastrow web-post-tr)
+;;    (key-place (+ innercol-offset 3) cornerrow web-post-br)
+;;    (key-place (+ innercol-offset 3) lastrow web-post-tl)
+;;    (key-place (+ innercol-offset 3) cornerrow web-post-bl))
+;;   (triangle-hulls
+;;    (key-place (+ innercol-offset 2) lastrow web-post-tr)
+;;    (key-place (+ innercol-offset 2) lastrow web-post-br)
+;;    (key-place (+ innercol-offset 3) lastrow web-post-tl)
+;;    (key-place (+ innercol-offset 3) lastrow web-post-bl))
+;;   (triangle-hulls
+;;    (handshakethumb-01-place web-post-br)
+;;    (handshakethumb-01-place web-post-tr)
+;;    (key-place (+ innercol-offset 3) lastrow web-post-bl))
+;;   (triangle-hulls
+;;    (key-place (+ innercol-offset 1) cornerrow web-post-br)
+;;    (key-place (+ innercol-offset 2) lastrow web-post-tl)
+;;    (key-place (+ innercol-offset 2) cornerrow web-post-bl)
+;;    (key-place (+ innercol-offset 2) lastrow web-post-tr)
+;;    (key-place (+ innercol-offset 2) cornerrow web-post-br)
+;;    (key-place (+ innercol-offset 3) lastrow web-post-tl)
+;;    (key-place (+ innercol-offset 3) cornerrow web-post-bl))
+;;   (if extra-row
+;;     (union
+;;      (triangle-hulls
+;;       (key-place (+ innercol-offset 3) lastrow web-post-tr)
+;;       (key-place (+ innercol-offset 3) lastrow web-post-br)
+;;       (key-place (+ innercol-offset 4) lastrow web-post-tl)
+;;       (key-place (+ innercol-offset 4) lastrow web-post-bl))
+;;      (triangle-hulls
+;;       (key-place (+ innercol-offset 3) lastrow web-post-tr)
+;;       (key-place (+ innercol-offset 3) cornerrow web-post-br)
+;;       (key-place (+ innercol-offset 4) lastrow web-post-tl)
+;;       (key-place (+ innercol-offset 4) cornerrow web-post-bl)))
+;;     (union
+;;      (triangle-hulls
+;;       (key-place (+ innercol-offset 3) lastrow web-post-tr)
+;;       (key-place (+ innercol-offset 3) lastrow web-post-br)
+;;       (key-place (+ innercol-offset 4) cornerrow web-post-bl))
+;;      (triangle-hulls
+;;       (key-place (+ innercol-offset 3) lastrow web-post-tr)
+;;       (key-place (+ innercol-offset 3) cornerrow web-post-br)
+;;       (key-place (+ innercol-offset 4) cornerrow web-post-bl))))))
+
 ;switching connectors, switchplates, etc. depending on thumb-style used
 (when (= thumb-style "manuform")
   (def thumb-type thumb)
@@ -942,6 +1235,12 @@
   (def thumb-connector-type minithumb-connectors)
   (def thumbcaps-type minithumbcaps)
   (def thumbcaps-fill-type minithumbcaps-fill))
+
+(when (= thumb-style "handshake")
+  (def thumb-type handshakethumb)
+  (def thumb-connector-type handshakethumb-connectors)
+  (def thumbcaps-type handshakethumbcaps)
+  (def thumbcaps-fill-type handshakethumbcaps-fill))
 
 ;;;;;;;;;;
 ;; Case ;;
@@ -1031,6 +1330,77 @@
              )
            (key-wall-brace lastcol extra-cornerrow 0 -1 web-post-br lastcol extra-cornerrow 1 0 web-post-br)
            )))
+
+(def handshake-thumb-offset (if inner-column -0.3 -1.7))
+(def handshake-thumb-wall
+	(wall-brace
+		handshakethumb-21-place 0 -1 web-post-tr
+		handshakethumb-21-place 0 -1 web-post-tl
+	)
+)
+;;  (union
+;;   ; thumb walls
+;;   (wall-brace handshakethumb-11-place  0 -1 web-post-br handshakethumb-01-place  0 -1 web-post-br)
+;;   (wall-brace handshakethumb-11-place  0 -1 web-post-br handshakethumb-11-place  0 -1.15 web-post-bl)
+;;   (wall-brace handshakethumb-20-place  0 -1 web-post-br handshakethumb-20-place  0 -1 web-post-bl)
+;;   (wall-brace handshakethumb-21-place  handshake-thumb-offset  1 thumb-post-tr handshakethumb-21-place  0 1 thumb-post-tl)
+;;   (wall-brace handshakethumb-20-place -1  0 web-post-tl handshakethumb-20-place -1  0 web-post-bl)
+;;   (wall-brace handshakethumb-21-place -1  0 thumb-post-tl handshakethumb-21-place -1  0 web-post-bl)
+;;   ; handshakethumb corners
+;;   (wall-brace handshakethumb-20-place -1  0 web-post-bl handshakethumb-20-place  0 -1 web-post-bl)
+;;   (wall-brace handshakethumb-21-place -1  0 thumb-post-tl handshakethumb-21-place  0  1 thumb-post-tl)
+;;   ; handshakethumb tweeners
+;;   (wall-brace handshakethumb-11-place  0 -1.15 web-post-bl handshakethumb-20-place  0 -1 web-post-br)
+;;   (wall-brace handshakethumb-21-place -1  0 web-post-bl handshakethumb-20-place -1  0 web-post-tl)
+;;   (wall-brace handshakethumb-01-place  0 -1 web-post-br (partial key-place (+ innercol-offset 3) lastrow)  0 -1 web-post-bl)
+;;   ; clunky bit on the top left handshakethumb connection  (normal connectors don't work well)
+;;   (bottom-hull
+;;    (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) web-post))
+;;    (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) web-post))
+;;    (handshakethumb-21-place (translate (wall-locate2 handshake-thumb-offset 1) thumb-post-tr))
+;;    (handshakethumb-21-place (translate (wall-locate3 handshake-thumb-offset 1) thumb-post-tr)))
+;;   (hull
+;;    (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) web-post))
+;;    (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) web-post))
+;;    (handshakethumb-21-place (translate (wall-locate2 handshake-thumb-offset 1) thumb-post-tr))
+;;    (handshakethumb-21-place (translate (wall-locate3 handshake-thumb-offset 1) thumb-post-tr))
+;;    (handshakethumb-10-place thumb-post-tl))
+;;   (hull
+;;    (left-key-place (- cornerrow innercol-offset) -1 web-post)
+;;    (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate1 -1 0) web-post))
+;;    (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) web-post))
+;;    (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) web-post))
+;;    (handshakethumb-10-place thumb-post-tl))
+;;   (hull
+;;    (left-key-place (- cornerrow innercol-offset) -1 web-post)
+;;    (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate1 -1 0) web-post))
+;;    (key-place 0 (- cornerrow innercol-offset) web-post-bl)
+;;    (handshakethumb-10-place thumb-post-tl))
+;;   (hull
+;;    (handshakethumb-21-place thumb-post-tr)
+;;    (handshakethumb-21-place (translate (wall-locate1 handshake-thumb-offset 1) thumb-post-tr))
+;;    (handshakethumb-21-place (translate (wall-locate2 handshake-thumb-offset 1) thumb-post-tr))
+;;    (handshakethumb-21-place (translate (wall-locate3 handshake-thumb-offset 1) thumb-post-tr))
+;;    (handshakethumb-10-place thumb-post-tl))
+;;   ; connectors below the inner column to the thumb & second column
+;;   (if inner-column
+;;     (union
+;;      (hull
+;;       (key-place 0 (dec cornerrow) web-post-bl)
+;;       (key-place 0 (dec cornerrow) web-post-br)
+;;       (key-place 0 cornerrow web-post-tr))
+;;      (hull
+;;       (key-place 0 cornerrow web-post-tr)
+;;       (key-place 1 cornerrow web-post-tl)
+;;       (key-place 1 cornerrow web-post-bl))
+;;      (hull
+;;       (key-place 0 (dec cornerrow) web-post-bl)
+;;       (key-place 0 cornerrow web-post-tr)
+;;       (key-place 1 cornerrow web-post-bl))
+;;      (hull
+;;       (key-place 0 (dec cornerrow) web-post-bl)
+;;       (key-place 1 cornerrow web-post-bl)
+;;       (handshakethumb-10-place thumb-post-tl))))))
 
 (def cf-thumb-offset (if inner-column -0.3 -1.7))
 (def cf-thumb-wall
@@ -1236,7 +1606,8 @@
   (case thumb-style
     "manuform" manuform-thumb-wall
     "cf" cf-thumb-wall
-    "mini" mini-thumb-wall))
+    "mini" mini-thumb-wall
+    "handshake" handshake-thumb-wall))
 
 (def case-walls
   (union
@@ -1320,6 +1691,14 @@
     (def screw-offset-br [-6 13 0]))
     
 ; Offsets for the screw inserts dependent on thumb-style & inner-column
+(when (and (= thumb-style "handshake") inner-column)
+    (def screw-offset-bl [9 4 0])
+    (def screw-offset-tm [9.5 -4.5 0])
+    (def screw-offset-bm [13 -7 0]))
+(when (and (= thumb-style "handshake") (false? inner-column))
+    (def screw-offset-bl [-3.5 2 0])
+    (def screw-offset-tm [9.5 -4.5 0])
+    (def screw-offset-bm [13 -7 0]))
 (when (and (= thumb-style "cf") inner-column)
     (def screw-offset-bl [9 4 0])
     (def screw-offset-tm [9.5 -4.5 0])

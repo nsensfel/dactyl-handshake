@@ -1,29 +1,28 @@
-# Dactyl ManuForm Keyboard
+# Dactyl ManuForm Handshake Keyboard
 
-This is a fork of the [Dactyl-ManuForm](https://github.com/tshort/dactyl-keyboard). The Dactyl-Manuform is a fork of the [Dactyl](https://github.com/adereth/dactyl-keyboard) with the thumb cluster from [ManuForm](https://github.com/jeffgran/ManuForm). Some features from the Dactyl Manuform Mini are kept along with new features added. 
+This is a fork of the [Dactyl-ManuForm](https://github.com/tshort/dactyl-keyboard) (itself a fork of
+ [Dactyl](https://github.com/adereth/dactyl-keyboard) adding the thumb cluster from [ManuForm](https://github.com/jeffgran/ManuForm))
+
+No efforts have been made to keep parent codebases' features functional or
+present. In fact, the code is meant to be kept rather focused on this particular
+fork's features. All authors remain listed nonetheless, as this is based on
+their work.
 
 ## Features
+This fork explores the possibility of a thumb cluster meant to be used the same
+way as those on computer mice. That is to say, if the other fingers are pushing
+buttons vertically, the thumb is pushing horizontally.
 
-- The use of sidenubs can be disabled. Sidenub should be disabled if you use Kailh, and Outemu. If you use Cherry MX, Gateron or Zealios switches, you can enable the sidenubs.
+The current strategy is to have the thumb cluster fairly high, creating a wall
+between keyboard finds itself separating the thumb from the index, much like
+during a handshake.
 
-![sidenubs](https://i.imgur.com/bCpeHjh.png)
-- Toggle for outer column between using 1.5u sized keys and 1u sized keys. If enabled, the rows which use 1.5u sized keys can be specified.
+A somewhat different approach for palm rests is also being tested, which could
+be described as closer to a bike handle (or flight throttle rudder) than usual:
+instead of a flat surface on which the bottom of the palm rests, the cusp of the
+key well provides a surface for the middle and upper part of the palm.
 
-![1.5u outer column](https://i.imgur.com/3hZadLK.png)
-- Toggle for an extra row of keys for the outer column(s).
-
-![extra bottom row](https://i.imgur.com/Gw3qk6Q.png)
-- Toggle for an extra inner column before the thumbcluster with (nrows-2) rows.
-
-![inner column](https://i.imgur.com/GnxvHOQ.png)
-- Toggle between using the manuform thumb cluster, the mini thumb cluster designed by [l4u](https://github.com/l4u/dactyl-manuform-mini-keyboard), and the cf thumb cluster.
-- The cf thumb cluster uses the same keycaps as the manuform, but is more compact. The thumb only has to move one position left or right from its neutral position to reach all the keys. 
-
-![thumb clusters](https://i.imgur.com/3dvW10o.png)
-- Removable MCU holder. This holder slides into a cutout on the back wall of the case. Designed for RP2040 based MCU shown [here](https://www.reddit.com/r/ErgoMechKeyboards/comments/1304ucc/new_mcu_for_dactyls_using_an_rp2040/). For case sizes that are 5x6 or smaller, use 2040 holder (alt).step. 
-
-![MCU holder](https://i.imgur.com/PKbbydM.png) 
-
+The project is in its **early design phase**, definitely not ready for use.
 
 ## Generate OpenSCAD and STL models
 
@@ -34,10 +33,9 @@ This is a fork of the [Dactyl-ManuForm](https://github.com/tshort/dactyl-keyboar
 * When done, use OpenSCAD to export STL files
 
 
-
 ## License
 
-Copyright © 2015-2018 Matthew Adereth, Tom Short and Leo Lou
+Copyright © 2015-2026 Nathanaël Sensfelder, Matthew Adereth, Tom Short, and Leo Lou
 
 The source code for generating the models is distributed under the [GNU AFFERO GENERAL PUBLIC LICENSE Version 3](LICENSE).
 

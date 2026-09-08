@@ -3,10 +3,10 @@
 This is a fork of the [Dactyl-ManuForm](https://github.com/tshort/dactyl-keyboard) (itself a fork of
  [Dactyl](https://github.com/adereth/dactyl-keyboard) adding the thumb cluster from [ManuForm](https://github.com/jeffgran/ManuForm))
 
-No efforts have been made to keep parent codebases' features functional or
-present. In fact, the code is meant to be kept rather focused on this particular
-fork's features. All authors remain listed nonetheless, as this is based on
-their work.
+The script has been greatly altered for readability and ease of customization,
+but no efforts have been made to keep features from parent codebases. Despite
+this, no authors were removed, regardless of whether their contributions remain,
+as this is still based on their work.
 
 ## Features
 This fork explores the possibility of a thumb cluster meant to be used the same

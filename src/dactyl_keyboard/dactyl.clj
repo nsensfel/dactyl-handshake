@@ -559,6 +559,7 @@
 )
 
 ;; FIXME: Name of this vs key-socket-bottom-right-corner not clear enough
+;; TODO: these should check for key size to know which variant to use.
 (defn key-socket-bottom-right-corner-dot [column row]
 	(shape-place-at-key column row key-socket-bottom-right-corner)
 )
@@ -587,139 +588,65 @@
     (def wide-post-bl key-socket-bottom-left-corner)
     (def wide-post-br key-socket-bottom-right-corner)))
 
-(def connectors
+(def key-sockets-interconnecting-mesh-shape
 	(apply
 		union
 		(concat
-			;; Row connections
+			;; Interconnections within a row.
 			(for
 				[
-					column (range (+ innercol-offset 0) (dec columns-count))
-					row (range 0 rows-last-index)
+					column columns-index-list
+					row rows-index-list
+					:when
+						(and
+							(key-exists? (dec column) row)
+							(key-exists? column row)
+						)
 				]
 				(triangle-mesh-hull
-					(shape-place-at-key (inc column) row key-socket-top-left-corner)
-					(shape-place-at-key column row key-socket-top-right-corner)
-					(shape-place-at-key (inc column) row key-socket-bottom-left-corner)
-					(shape-place-at-key column row key-socket-bottom-right-corner)
+					(key-socket-top-right-corner-dot (dec column) row)
+					(key-socket-top-left-corner-dot column row)
+					(key-socket-bottom-right-corner-dot (dec column) row)
+					(key-socket-bottom-left-corner-dot column row)
 				)
 			)
-			;; Column connections
+			;; Interconnections within a column.
 			(for
 				[
-					column columns
-					row (range 0 rows-last-index)
+					column columns-index-list
+					row rows-index-list
+					:when
+						(and
+							(key-exists? column (dec row))
+							(key-exists? column row)
+						)
 				]
 				(triangle-mesh-hull
-					(shape-place-at-key column row key-socket-bottom-left-corner)
-					(shape-place-at-key column row key-socket-bottom-right-corner)
-					(shape-place-at-key column (inc row) key-socket-top-left-corner)
-					(shape-place-at-key column (inc row) key-socket-top-right-corner)
+					(key-socket-bottom-left-corner-dot column (dec row))
+					(key-socket-bottom-right-corner-dot column (dec row))
+					(key-socket-top-left-corner-dot column row)
+					(key-socket-top-right-corner-dot column row)
 				)
 			)
-			;; Diagonal connections
+			;; Diagonal interconnections (little bit not covered by horizontal and
+			;; vertical connections).
 			(for
 				[
-					column (range 0 (dec columns-count))
-					row (range 0 (- rows-last-index 1));;cornerrow)
+					column columns-index-list
+					row rows-index-list
+					:when
+						(and
+							(key-exists? (dec column) (dec row))
+							(key-exists? (dec column) row)
+							(key-exists? column (dec row))
+							(key-exists? column row)
+						)
 				]
 				(triangle-mesh-hull
-					(shape-place-at-key column row key-socket-bottom-right-corner)
-					(shape-place-at-key column (inc row) key-socket-top-right-corner)
-					(shape-place-at-key (inc column) row key-socket-bottom-left-corner)
-					(shape-place-at-key (inc column) (inc row) key-socket-top-left-corner)
-				)
-			)
-		)
-	)
-)
-
-(def inner-connectors
-	(if true
-		(apply union
-			(concat
-				;; Row connections
-				(for
-					[
-						column (range 0 1)
-						row (range 0 (dec rows-last-index))
-					]
-					(triangle-mesh-hull
-						(shape-place-at-key (inc column) row key-socket-top-left-corner)
-						(shape-place-at-key column row key-socket-top-right-corner)
-						(shape-place-at-key (inc column) row key-socket-bottom-left-corner)
-						(shape-place-at-key column row key-socket-bottom-right-corner)
-					)
-				)
-				;; Column connections
-				(for
-					[
-						row (range 0 (dec rows-last-index))
-					]
-					(triangle-mesh-hull
-						(shape-place-at-key 0 row key-socket-bottom-left-corner)
-						(shape-place-at-key 0 row key-socket-bottom-right-corner)
-						(shape-place-at-key 0 (inc row) key-socket-top-left-corner)
-						(shape-place-at-key 0 (inc row) key-socket-top-right-corner)
-					)
-				)
-				;; Diagonal connections
-				(for
-					[
-						column (range 0 (dec columns-count))
-						row (range 0 rows-last-index)
-					]
-					(triangle-mesh-hull
-						(shape-place-at-key column row key-socket-bottom-right-corner)
-						(shape-place-at-key column (inc row) key-socket-top-right-corner)
-						(shape-place-at-key (inc column) row key-socket-bottom-left-corner)
-						(shape-place-at-key (inc column) (inc row) key-socket-top-left-corner)
-					)
-				)
-			)
-		)
-	)
-)
-
-(def extra-connectors
-	(if true
-		(apply union
-			(concat
-				(for
-					[
-						column (range 3 columns-count)
-						row (range cornerrow rows-last-index)
-					]
-					(triangle-mesh-hull
-						(shape-place-at-key column row key-socket-bottom-left-corner)
-						(shape-place-at-key column row key-socket-bottom-right-corner)
-						(shape-place-at-key column (inc row) key-socket-top-left-corner)
-						(shape-place-at-key column (inc row) key-socket-top-right-corner)
-					)
-				)
-				(for
-					[
-						column (range 3 (dec columns-count))
-						row (range cornerrow rows-last-index)
-					]
-					(triangle-mesh-hull
-						(shape-place-at-key column row key-socket-bottom-right-corner)
-						(shape-place-at-key column (inc row) key-socket-top-right-corner)
-						(shape-place-at-key (inc column) row key-socket-bottom-left-corner)
-						(shape-place-at-key (inc column) (inc row) key-socket-top-left-corner)
-					)
-				)
-				(for
-					[
-						column (range 0 (dec columns-count))
-						row (range rows-last-index rows-count)
-					]
-					(triangle-mesh-hull
-						(shape-place-at-key (inc column) row key-socket-top-left-corner)
-						(shape-place-at-key column row key-socket-top-right-corner)
-						(shape-place-at-key (inc column) row key-socket-bottom-left-corner)
-						(shape-place-at-key column row key-socket-bottom-right-corner)
-					)
+					(key-socket-bottom-left-corner-dot (dec column) (dec row))
+					(key-socket-bottom-right-corner-dot column (dec row))
+					(key-socket-top-right-corner-dot (dec column) row)
+					(key-socket-top-left-corner-dot column row)
 				)
 			)
 		)
@@ -877,388 +804,53 @@
     (thumb-tr-place thumb-post-br))
    (triangle-mesh-hull    ; top two to the main keyboard, starting on the left
     (thumb-tl-place thumb-post-tl)
-    (shape-place-at-key (+ innercol-offset 0) cornerrow key-socket-bottom-left-corner)
+    (key-socket-bottom-left-corner-dot (+ innercol-offset 0) cornerrow)
     (thumb-tl-place thumb-post-tr)
-    (shape-place-at-key (+ innercol-offset 0) cornerrow key-socket-bottom-right-corner)
+    (key-socket-bottom-right-corner-dot (+ innercol-offset 0) cornerrow)
     (thumb-tr-place thumb-post-tl)
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-left-corner)
+    (key-socket-bottom-left-corner-dot (+ innercol-offset 1) cornerrow)
     (thumb-tr-place thumb-post-tr)
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-left-corner)
+    (key-socket-bottom-right-corner-dot (+ innercol-offset 1) cornerrow)
+    (key-socket-top-left-corner-dot (+ innercol-offset 2) rows-last-index)
+    (key-socket-bottom-left-corner-dot (+ innercol-offset 2) rows-last-index)
     (thumb-tr-place thumb-post-tr)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-left-corner)
+    (key-socket-bottom-left-corner-dot (+ innercol-offset 2) rows-last-index)
     (thumb-tr-place thumb-post-br)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-left-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner))
+    (key-socket-bottom-right-corner-dot (+ innercol-offset 2) rows-last-index)
+    (key-socket-bottom-left-corner-dot (+ innercol-offset 3) rows-last-index)
+    (key-socket-top-right-corner-dot (+ innercol-offset 2) rows-last-index)
+    (key-socket-top-left-corner-dot (+ innercol-offset 3) rows-last-index)
+    (key-socket-bottom-left-corner-dot (+ innercol-offset 3) cornerrow)
+    (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+    (key-socket-bottom-right-corner-dot (+ innercol-offset 3) cornerrow))
    (triangle-mesh-hull
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) cornerrow key-socket-bottom-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-left-corner))
+    (key-socket-bottom-right-corner-dot (+ innercol-offset 1) cornerrow)
+    (key-socket-top-left-corner-dot (+ innercol-offset 2) rows-last-index)
+    (key-socket-bottom-left-corner-dot (+ innercol-offset 2) cornerrow)
+    (key-socket-top-right-corner-dot (+ innercol-offset 2) rows-last-index)
+    (key-socket-bottom-right-corner-dot (+ innercol-offset 2) cornerrow)
+    (key-socket-bottom-left-corner-dot (+ innercol-offset 3) cornerrow))
    (if true
      (union
       (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-top-left-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-bottom-left-corner))
+       (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+       (key-socket-bottom-right-corner-dot (+ innercol-offset 3) rows-last-index)
+       (key-socket-top-left-corner-dot (+ innercol-offset 4) rows-last-index)
+       (key-socket-bottom-left-corner-dot (+ innercol-offset 4) rows-last-index))
       (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-top-left-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner)))
+       (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+       (key-socket-bottom-right-corner-dot (+ innercol-offset 3) cornerrow)
+       (key-socket-top-left-corner-dot (+ innercol-offset 4) rows-last-index)
+       (key-socket-bottom-left-corner-dot (+ innercol-offset 4) cornerrow)))
      (union
       (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner))
+       (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+       (key-socket-bottom-right-corner-dot (+ innercol-offset 3) rows-last-index)
+       (key-socket-bottom-left-corner-dot (+ innercol-offset 4) cornerrow))
       (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner))))))
-
-;;;;;;;;;;;;;;;;
-;; Mini Thumb ;;
-;;;;;;;;;;;;;;;;
-
-(defn minithumb-tr-place [shape]
-  (->> shape
-       (rotate (deg2rad  14) [1 0 0])
-       (rotate (deg2rad -15) [0 1 0])
-       (rotate (deg2rad  10) [0 0 1]) ; original 10
-       (translate thumborigin)
-       (translate [-15 -10 5]))) ; original 1.5u  (translate [-12 -16 3])
-(defn minithumb-tl-place [shape]
-  (->> shape
-       (rotate (deg2rad  10) [1 0 0])
-       (rotate (deg2rad -23) [0 1 0])
-       (rotate (deg2rad  25) [0 0 1]) ; original 10
-       (translate thumborigin)
-       (translate [-35 -16 -2]))) ; original 1.5u (translate [-32 -15 -2])))
-(defn minithumb-mr-place [shape]
-  (->> shape
-       (rotate (deg2rad  10) [1 0 0])
-       (rotate (deg2rad -23) [0 1 0])
-       (rotate (deg2rad  25) [0 0 1])
-       (translate thumborigin)
-       (translate [-23 -34 -6])))
-(defn minithumb-br-place [shape]
-  (->> shape
-       (rotate (deg2rad   6) [1 0 0])
-       (rotate (deg2rad -34) [0 1 0])
-       (rotate (deg2rad  35) [0 0 1])
-       (translate thumborigin)
-       (translate [-39 -43 -16])))
-(defn minithumb-bl-place [shape]
-  (->> shape
-       (rotate (deg2rad   6) [1 0 0])
-       (rotate (deg2rad -32) [0 1 0])
-       (rotate (deg2rad  35) [0 0 1])
-       (translate thumborigin)
-       (translate [-51 -25 -11.5]))) ;        (translate [-51 -25 -12])))
-
-(defn minithumb-1x-layout [shape]
-  (union
-   (minithumb-mr-place shape)
-   (minithumb-br-place shape)
-   (minithumb-tl-place shape)
-   (minithumb-bl-place shape)))
-
-(defn minithumb-15x-layout [shape]
-  (union
-   (minithumb-tr-place shape)))
-
-(def minithumbcaps
-  (union
-   (minithumb-1x-layout (sa-cap 1))
-   (minithumb-15x-layout (rotate (/ π 2) [0 0 1] (sa-cap 1)))))
-
-(def minithumbcaps-fill
-  (union
-   (minithumb-1x-layout keyhole-fill)
-   (minithumb-15x-layout (rotate (/ π 2) [0 0 1] keyhole-fill))))
-
-(def minithumb
-  (union
-   (minithumb-1x-layout key-socket-draw)
-   (minithumb-15x-layout key-socket-draw)))
-
-(def minithumb-post-tr (translate [(- (/ key-sockets-outer-width 2) location-dot-half-size)  (- (/ key-sockets-outer-height  2) location-dot-half-size) 0] key-socket-location-dot))
-(def minithumb-post-tl (translate [(+ (/ key-sockets-outer-width -2) location-dot-half-size) (- (/ key-sockets-outer-height  2) location-dot-half-size) 0] key-socket-location-dot))
-(def minithumb-post-bl (translate [(+ (/ key-sockets-outer-width -2) location-dot-half-size) (+ (/ key-sockets-outer-height -2) location-dot-half-size) 0] key-socket-location-dot))
-(def minithumb-post-br (translate [(- (/ key-sockets-outer-width 2) location-dot-half-size)  (+ (/ key-sockets-outer-height -2) location-dot-half-size) 0] key-socket-location-dot))
-
-(def minithumb-connectors
-  (union
-   (triangle-mesh-hull    ; top two
-    (minithumb-tl-place key-socket-top-right-corner)
-    (minithumb-tl-place key-socket-bottom-right-corner)
-    (minithumb-tr-place minithumb-post-tl)
-    (minithumb-tr-place minithumb-post-bl))
-   (triangle-mesh-hull    ; bottom two
-    (minithumb-br-place key-socket-top-right-corner)
-    (minithumb-br-place key-socket-bottom-right-corner)
-    (minithumb-mr-place key-socket-top-left-corner)
-    (minithumb-mr-place key-socket-bottom-left-corner))
-   (triangle-mesh-hull
-    (minithumb-mr-place key-socket-top-right-corner)
-    (minithumb-mr-place key-socket-bottom-right-corner)
-    (minithumb-tr-place minithumb-post-br))
-   (triangle-mesh-hull    ; between top row and bottom row
-    (minithumb-br-place key-socket-top-left-corner)
-    (minithumb-bl-place key-socket-bottom-left-corner)
-    (minithumb-br-place key-socket-top-right-corner)
-    (minithumb-bl-place key-socket-bottom-right-corner)
-    (minithumb-mr-place key-socket-top-left-corner)
-    (minithumb-tl-place key-socket-bottom-left-corner)
-    (minithumb-mr-place key-socket-top-right-corner)
-    (minithumb-tl-place key-socket-bottom-right-corner)
-    (minithumb-tr-place key-socket-bottom-left-corner)
-    (minithumb-mr-place key-socket-top-right-corner)
-    (minithumb-tr-place key-socket-bottom-right-corner))
-   (triangle-mesh-hull    ; top two to the middle two, starting on the left
-    (minithumb-tl-place key-socket-top-left-corner)
-    (minithumb-bl-place key-socket-top-right-corner)
-    (minithumb-tl-place key-socket-bottom-left-corner)
-    (minithumb-bl-place key-socket-bottom-right-corner)
-    (minithumb-mr-place key-socket-top-right-corner)
-    (minithumb-tl-place key-socket-bottom-left-corner)
-    (minithumb-tl-place key-socket-bottom-right-corner)
-    (minithumb-mr-place key-socket-top-right-corner))
-   (triangle-mesh-hull    ; top two to the main keyboard, starting on the left
-    (minithumb-tl-place key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 0) cornerrow key-socket-bottom-left-corner)
-    (minithumb-tl-place key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 0) cornerrow key-socket-bottom-right-corner)
-    (minithumb-tr-place minithumb-post-tl)
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-left-corner)
-    (minithumb-tr-place minithumb-post-tr)
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-left-corner)
-    (minithumb-tr-place minithumb-post-tr)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-left-corner)
-    (minithumb-tr-place minithumb-post-br)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-left-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-    )
-   (triangle-mesh-hull
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) cornerrow key-socket-bottom-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-left-corner))
-   (if true
-     (union
-      (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-top-left-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-bottom-left-corner))
-      (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-top-left-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner)))
-     (union
-      (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner))
-      (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner))))))
-
-;;;;;;;;;;;;;;;;
-;;  CF Thumb  ;;
-;;;;;;;;;;;;;;;;
-
-(defn cfthumb-tl-place [shape]
-  (->> shape
-       (rotate (deg2rad  20) [1 0 0])
-       (rotate (deg2rad -24) [0 1 0])
-       (rotate (deg2rad  10) [0 0 1])
-       (translate thumborigin)
-       (translate [-13 -9.8 4])))
-(defn cfthumb-tr-place [shape]
-  (->> shape
-       (rotate (deg2rad  6) [1 0 0])
-       (rotate (deg2rad -24) [0 1 0])
-       (rotate (deg2rad  10) [0 0 1])
-       (translate thumborigin)
-       (translate [-7.5 -29.5 0])))
-(defn cfthumb-ml-place [shape]
-  (->> shape
-       (rotate (deg2rad  8) [1 0 0])
-       (rotate (deg2rad -31) [0 1 0])
-       (rotate (deg2rad  14) [0 0 1])
-       (translate thumborigin)
-       (translate [-30.5 -17 -6])))
-(defn cfthumb-mr-place [shape]
-  (->> shape
-       (rotate (deg2rad  4) [1 0 0])
-       (rotate (deg2rad -31) [0 1 0])
-       (rotate (deg2rad  14) [0 0 1])
-       (translate thumborigin)
-       (translate [-22.2 -41 -10.3])))
-(defn cfthumb-br-place [shape]
-  (->> shape
-       (rotate (deg2rad   2) [1 0 0])
-       (rotate (deg2rad -37) [0 1 0])
-       (rotate (deg2rad  18) [0 0 1])
-       (translate thumborigin)
-       (translate [-37 -46.4 -22])))
-(defn cfthumb-bl-place [shape]
-  (->> shape
-       (rotate (deg2rad   6) [1 0 0])
-       (rotate (deg2rad -37) [0 1 0])
-       (rotate (deg2rad  18) [0 0 1])
-       (translate thumborigin)
-       (translate [-47 -23 -19])))
-
-(defn cfthumb-1x-layout [shape]
-  (union
-   (cfthumb-tr-place (rotate (/ π 2) [0 0 0] shape))
-   (cfthumb-mr-place shape)
-   (cfthumb-br-place shape)
-   (cfthumb-tl-place (rotate (/ π 2) [0 0 0] shape))))
-
-(defn cfthumb-15x-layout [shape]
-  (union
-   (cfthumb-bl-place shape)
-   (cfthumb-ml-place shape)))
-
-(def cfthumbcaps
-  (union
-   (cfthumb-1x-layout (sa-cap 1))
-   (cfthumb-15x-layout (rotate (/ π 2) [0 0 1] (sa-cap 1.5)))))
-
-(def cfthumbcaps-fill
-  (union
-   (cfthumb-1x-layout keyhole-fill)
-   (cfthumb-15x-layout (rotate (/ π 2) [0 0 1] keyhole-fill))))
-
-(def cfthumb
-  (union
-   (cfthumb-1x-layout key-socket-draw)
-   (cfthumb-15x-layout larger-plate-half)
-   (cfthumb-15x-layout key-socket-draw)))
-
-(def cfthumb-connectors
-  (union
-   (triangle-mesh-hull    ; top two
-    (cfthumb-tl-place key-socket-top-left-corner)
-    (cfthumb-tl-place key-socket-bottom-left-corner)
-    (cfthumb-ml-place thumb-post-tr)
-    (cfthumb-ml-place key-socket-bottom-right-corner))
-   (triangle-mesh-hull
-    (cfthumb-ml-place thumb-post-tl)
-    (cfthumb-ml-place key-socket-bottom-left-corner)
-    (cfthumb-bl-place thumb-post-tr)
-    (cfthumb-bl-place key-socket-bottom-right-corner))
-   (triangle-mesh-hull    ; bottom two
-    (cfthumb-br-place key-socket-top-right-corner)
-    (cfthumb-br-place key-socket-bottom-right-corner)
-    (cfthumb-mr-place key-socket-top-left-corner)
-    (cfthumb-mr-place key-socket-bottom-left-corner))
-   (triangle-mesh-hull
-    (cfthumb-mr-place key-socket-top-right-corner)
-    (cfthumb-mr-place key-socket-bottom-right-corner)
-    (cfthumb-tr-place key-socket-top-left-corner)
-    (cfthumb-tr-place key-socket-bottom-left-corner))
-   (triangle-mesh-hull
-    (cfthumb-tr-place key-socket-bottom-right-corner)
-    (cfthumb-tr-place key-socket-bottom-left-corner)
-    (cfthumb-mr-place key-socket-bottom-right-corner))
-   (triangle-mesh-hull    ; between top row and bottom row
-    (cfthumb-br-place key-socket-top-left-corner)
-    (cfthumb-bl-place key-socket-bottom-left-corner)
-    (cfthumb-br-place key-socket-top-right-corner)
-    (cfthumb-bl-place key-socket-bottom-right-corner)
-    (cfthumb-mr-place key-socket-top-left-corner)
-    (cfthumb-ml-place key-socket-bottom-left-corner)
-    (cfthumb-mr-place key-socket-top-right-corner)
-    (cfthumb-ml-place key-socket-bottom-right-corner)
-    (cfthumb-tr-place key-socket-top-left-corner)
-    (cfthumb-tl-place key-socket-bottom-left-corner)
-    (cfthumb-tr-place key-socket-top-right-corner)
-    (cfthumb-tl-place key-socket-bottom-right-corner))
-   (triangle-mesh-hull    ; top two to the main keyboard, starting on the left
-    (cfthumb-ml-place thumb-post-tl)
-    (shape-place-at-key (+ innercol-offset 0) cornerrow key-socket-bottom-left-corner)
-    (cfthumb-ml-place thumb-post-tr)
-    (shape-place-at-key (+ innercol-offset 0) cornerrow key-socket-bottom-right-corner)
-    (cfthumb-tl-place key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-left-corner)
-    (cfthumb-tl-place key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-left-corner)
-    (cfthumb-tl-place key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-left-corner)
-    (cfthumb-tl-place key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-left-corner)
-    (cfthumb-tl-place key-socket-bottom-right-corner)
-    (cfthumb-tr-place key-socket-top-right-corner))
-   (triangle-mesh-hull
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-left-corner))
-   (triangle-mesh-hull
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-left-corner))
-   (triangle-mesh-hull
-    (cfthumb-tr-place key-socket-bottom-right-corner)
-    (cfthumb-tr-place key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-left-corner))
-   (triangle-mesh-hull
-    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) cornerrow key-socket-bottom-left-corner)
-    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-right-corner)
-    (shape-place-at-key (+ innercol-offset 2) cornerrow key-socket-bottom-right-corner)
-    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-left-corner)
-    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-left-corner))
-   (if true
-     (union
-      (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-top-left-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-bottom-left-corner))
-      (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-top-left-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner)))
-     (union
-      (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner))
-      (triangle-mesh-hull
-       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-       (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner))))))
+       (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+       (key-socket-bottom-right-corner-dot (+ innercol-offset 3) cornerrow)
+       (key-socket-bottom-left-corner-dot (+ innercol-offset 4) cornerrow))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;;  Handshake Thumb  ;;
@@ -1430,8 +1022,8 @@
 ;;		(triangle-mesh-hull
 ;;			(handshakethumb-01-place key-socket-bottom-left-corner)
 ;;			(handshakethumb-01-place key-socket-bottom-right-corner)
-;;			(shape-place-at-key 0 (- rows-last-index 1) key-socket-top-left-corner)
-;;			(shape-place-at-key 0 (- rows-last-index 1) key-socket-bottom-left-corner)
+;;			(key-socket-top-left-corner-dot 0 (- rows-last-index 1))
+;;			(key-socket-bottom-left-corner-dot 0 (- rows-last-index 1))
 ;;		)
 	)
 )
@@ -1475,84 +1067,65 @@
 ;;    (handshakethumb-00-place key-socket-bottom-right-corner))
 ;;   (triangle-mesh-hull    ; top two to the main keyboard, starting on the left
 ;;    (handshakethumb-10-place thumb-post-tl)
-;;    (shape-place-at-key (+ innercol-offset 0) cornerrow key-socket-bottom-left-corner)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 0) cornerrow)
 ;;    (handshakethumb-10-place thumb-post-tr)
-;;    (shape-place-at-key (+ innercol-offset 0) cornerrow key-socket-bottom-right-corner)
+;;    (key-socket-bottom-right-corner-dot (+ innercol-offset 0) cornerrow)
 ;;    (handshakethumb-00-place key-socket-top-left-corner)
-;;    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-left-corner)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 1) cornerrow)
 ;;    (handshakethumb-00-place key-socket-top-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-left-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-left-corner)
+;;    (key-socket-bottom-right-corner-dot (+ innercol-offset 1) cornerrow)
+;;    (key-socket-top-left-corner-dot (+ innercol-offset 2) rows-last-index)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 2) rows-last-index)
 ;;    (handshakethumb-00-place key-socket-top-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-left-corner)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 2) rows-last-index)
 ;;    (handshakethumb-00-place key-socket-bottom-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-left-corner)
+;;    (key-socket-bottom-right-corner-dot (+ innercol-offset 2) rows-last-index)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 3) rows-last-index)
 ;;    (handshakethumb-00-place key-socket-bottom-right-corner)
 ;;    (handshakethumb-01-place key-socket-top-right-corner))
 ;;   (triangle-mesh-hull
-;;    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-left-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-left-corner))
+;;    (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+;;    (key-socket-bottom-right-corner-dot (+ innercol-offset 3) cornerrow)
+;;    (key-socket-top-left-corner-dot (+ innercol-offset 3) rows-last-index)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 3) cornerrow))
 ;;   (triangle-mesh-hull
-;;    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-bottom-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-left-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-left-corner))
+;;    (key-socket-top-right-corner-dot (+ innercol-offset 2) rows-last-index)
+;;    (key-socket-bottom-right-corner-dot (+ innercol-offset 2) rows-last-index)
+;;    (key-socket-top-left-corner-dot (+ innercol-offset 3) rows-last-index)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 3) rows-last-index))
 ;;   (triangle-mesh-hull
 ;;    (handshakethumb-01-place key-socket-bottom-right-corner)
 ;;    (handshakethumb-01-place key-socket-top-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-left-corner))
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 3) rows-last-index))
 ;;   (triangle-mesh-hull
-;;    (shape-place-at-key (+ innercol-offset 1) cornerrow key-socket-bottom-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-left-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) cornerrow key-socket-bottom-left-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) rows-last-index key-socket-top-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 2) cornerrow key-socket-bottom-right-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-left-corner)
-;;    (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-left-corner))
+;;    (key-socket-bottom-right-corner-dot (+ innercol-offset 1) cornerrow)
+;;    (key-socket-top-left-corner-dot (+ innercol-offset 2) rows-last-index)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 2) cornerrow)
+;;    (key-socket-top-right-corner-dot (+ innercol-offset 2) rows-last-index)
+;;    (key-socket-bottom-right-corner-dot (+ innercol-offset 2) cornerrow)
+;;    (key-socket-top-left-corner-dot (+ innercol-offset 3) rows-last-index)
+;;    (key-socket-bottom-left-corner-dot (+ innercol-offset 3) cornerrow))
 ;;   (if true
 ;;     (union
 ;;      (triangle-mesh-hull
-;;       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-;;       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-right-corner)
-;;       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-top-left-corner)
-;;       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-bottom-left-corner))
+;;       (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+;;       (key-socket-bottom-right-corner-dot (+ innercol-offset 3) rows-last-index)
+;;       (key-socket-top-left-corner-dot (+ innercol-offset 4) rows-last-index)
+;;       (key-socket-bottom-left-corner-dot (+ innercol-offset 4) rows-last-index))
 ;;      (triangle-mesh-hull
-;;       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-;;       (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-;;       (shape-place-at-key (+ innercol-offset 4) rows-last-index key-socket-top-left-corner)
-;;       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner)))
+;;       (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+;;       (key-socket-bottom-right-corner-dot (+ innercol-offset 3) cornerrow)
+;;       (key-socket-top-left-corner-dot (+ innercol-offset 4) rows-last-index)
+;;       (key-socket-bottom-left-corner-dot (+ innercol-offset 4) cornerrow)))
 ;;     (union
 ;;      (triangle-mesh-hull
-;;       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-;;       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-bottom-right-corner)
-;;       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner))
+;;       (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+;;       (key-socket-bottom-right-corner-dot (+ innercol-offset 3) rows-last-index)
+;;       (key-socket-bottom-left-corner-dot (+ innercol-offset 4) cornerrow))
 ;;      (triangle-mesh-hull
-;;       (shape-place-at-key (+ innercol-offset 3) rows-last-index key-socket-top-right-corner)
-;;       (shape-place-at-key (+ innercol-offset 3) cornerrow key-socket-bottom-right-corner)
-;;       (shape-place-at-key (+ innercol-offset 4) cornerrow key-socket-bottom-left-corner))))))
-
-;switching connectors, switchplates, etc. depending on thumb-style used
-(when (= thumb-style "manuform")
-  (def thumb-type thumb)
-  (def thumb-connector-type thumb-connectors)
-  (def thumbcaps-type thumbcaps)
-  (def thumbcaps-fill-type thumbcaps-fill))
-
-(when (= thumb-style "cf")
-  (def thumb-type cfthumb)
-  (def thumb-connector-type cfthumb-connectors)
-  (def thumbcaps-type cfthumbcaps)
-  (def thumbcaps-fill-type cfthumbcaps-fill))
-
-(when (= thumb-style "mini")
-  (def thumb-type minithumb)
-  (def thumb-connector-type minithumb-connectors)
-  (def thumbcaps-type minithumbcaps)
-  (def thumbcaps-fill-type minithumbcaps-fill))
+;;       (key-socket-top-right-corner-dot (+ innercol-offset 3) rows-last-index)
+;;       (key-socket-bottom-right-corner-dot (+ innercol-offset 3) cornerrow)
+;;       (key-socket-bottom-left-corner-dot (+ innercol-offset 4) cornerrow))))))
 
 (when (= thumb-style "handshake")
   (def thumb-type handshakethumb)
@@ -1759,7 +1332,7 @@
 ;;   (hull
 ;;    (left-shape-place-at-key (- cornerrow innercol-offset) -1 key-socket-location-dot)
 ;;    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate1 -1 0) key-socket-location-dot))
-;;    (shape-place-at-key 0 (- cornerrow innercol-offset) key-socket-bottom-left-corner)
+;;    (key-socket-bottom-left-corner-dot 0 (- cornerrow innercol-offset))
 ;;    (handshakethumb-10-place thumb-post-tl))
 ;;   (hull
 ;;    (handshakethumb-21-place thumb-post-tr)
@@ -1771,152 +1344,21 @@
 ;;   (if true
 ;;     (union
 ;;      (hull
-;;       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-;;       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-right-corner)
-;;       (shape-place-at-key 0 cornerrow key-socket-top-right-corner))
+;;       (key-socket-bottom-left-corner-dot 0 (dec cornerrow))
+;;       (key-socket-bottom-right-corner-dot 0 (dec cornerrow))
+;;       (key-socket-top-right-corner-dot 0 cornerrow))
 ;;      (hull
-;;       (shape-place-at-key 0 cornerrow key-socket-top-right-corner)
-;;       (shape-place-at-key 1 cornerrow key-socket-top-left-corner)
-;;       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner))
+;;       (key-socket-top-right-corner-dot 0 cornerrow)
+;;       (key-socket-top-left-corner-dot 1 cornerrow)
+;;       (key-socket-bottom-left-corner-dot 1 cornerrow))
 ;;      (hull
-;;       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-;;       (shape-place-at-key 0 cornerrow key-socket-top-right-corner)
-;;       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner))
+;;       (key-socket-bottom-left-corner-dot 0 (dec cornerrow))
+;;       (key-socket-top-right-corner-dot 0 cornerrow)
+;;       (key-socket-bottom-left-corner-dot 1 cornerrow))
 ;;      (hull
-;;       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-;;       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner)
+;;       (key-socket-bottom-left-corner-dot 0 (dec cornerrow))
+;;       (key-socket-bottom-left-corner-dot 1 cornerrow)
 ;;       (handshakethumb-10-place thumb-post-tl))))))
-
-(def cf-thumb-offset (if true -0.3 -1.7))
-(def cf-thumb-wall
-  (union
-   ; thumb walls
-   (wall-brace cfthumb-mr-place  0 -1 key-socket-bottom-right-corner cfthumb-tr-place  0 -1 key-socket-bottom-right-corner)
-   (wall-brace cfthumb-mr-place  0 -1 key-socket-bottom-right-corner cfthumb-mr-place  0 -1.15 key-socket-bottom-left-corner)
-   (wall-brace cfthumb-br-place  0 -1 key-socket-bottom-right-corner cfthumb-br-place  0 -1 key-socket-bottom-left-corner)
-   (wall-brace cfthumb-bl-place  cf-thumb-offset  1 thumb-post-tr cfthumb-bl-place  0 1 thumb-post-tl)
-   (wall-brace cfthumb-br-place -1  0 key-socket-top-left-corner cfthumb-br-place -1  0 key-socket-bottom-left-corner)
-   (wall-brace cfthumb-bl-place -1  0 thumb-post-tl cfthumb-bl-place -1  0 key-socket-bottom-left-corner)
-   ; cfthumb corners
-   (wall-brace cfthumb-br-place -1  0 key-socket-bottom-left-corner cfthumb-br-place  0 -1 key-socket-bottom-left-corner)
-   (wall-brace cfthumb-bl-place -1  0 thumb-post-tl cfthumb-bl-place  0  1 thumb-post-tl)
-   ; cfthumb tweeners
-   (wall-brace cfthumb-mr-place  0 -1.15 key-socket-bottom-left-corner cfthumb-br-place  0 -1 key-socket-bottom-right-corner)
-   (wall-brace cfthumb-bl-place -1  0 key-socket-bottom-left-corner cfthumb-br-place -1  0 key-socket-top-left-corner)
-   (wall-brace cfthumb-tr-place  0 -1 key-socket-bottom-right-corner (partial shape-place-at-key (+ innercol-offset 3) rows-last-index)  0 -1 key-socket-bottom-left-corner)
-   ; clunky bit on the top left cfthumb connection  (normal connectors don't work well)
-   (bottom-hull
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) key-socket-location-dot))
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) key-socket-location-dot))
-    (cfthumb-bl-place (translate (wall-locate2 cf-thumb-offset 1) thumb-post-tr))
-    (cfthumb-bl-place (translate (wall-locate3 cf-thumb-offset 1) thumb-post-tr)))
-   (hull
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) key-socket-location-dot))
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) key-socket-location-dot))
-    (cfthumb-bl-place (translate (wall-locate2 cf-thumb-offset 1) thumb-post-tr))
-    (cfthumb-bl-place (translate (wall-locate3 cf-thumb-offset 1) thumb-post-tr))
-    (cfthumb-ml-place thumb-post-tl))
-   (hull
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 key-socket-location-dot)
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate1 -1 0) key-socket-location-dot))
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) key-socket-location-dot))
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) key-socket-location-dot))
-    (cfthumb-ml-place thumb-post-tl))
-   (hull
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 key-socket-location-dot)
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate1 -1 0) key-socket-location-dot))
-    (shape-place-at-key 0 (- cornerrow innercol-offset) key-socket-bottom-left-corner)
-    (cfthumb-ml-place thumb-post-tl))
-   (hull
-    (cfthumb-bl-place thumb-post-tr)
-    (cfthumb-bl-place (translate (wall-locate1 cf-thumb-offset 1) thumb-post-tr))
-    (cfthumb-bl-place (translate (wall-locate2 cf-thumb-offset 1) thumb-post-tr))
-    (cfthumb-bl-place (translate (wall-locate3 cf-thumb-offset 1) thumb-post-tr))
-    (cfthumb-ml-place thumb-post-tl))
-   ; connectors below the inner column to the thumb & second column
-   (if true
-     (union
-      (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-right-corner)
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner))
-      (hull
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner)
-       (shape-place-at-key 1 cornerrow key-socket-top-left-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner))
-      (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner))
-      (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner)
-       (cfthumb-ml-place thumb-post-tl))))))
-
-(def mini-thumb-wall
-  (union
-   ; thumb walls
-   (wall-brace minithumb-mr-place  0 -1 key-socket-bottom-right-corner minithumb-tr-place  0 -1 minithumb-post-br)
-   (wall-brace minithumb-mr-place  0 -1 key-socket-bottom-right-corner minithumb-mr-place  0 -1 key-socket-bottom-left-corner)
-   (wall-brace minithumb-br-place  0 -1 key-socket-bottom-right-corner minithumb-br-place  0 -1 key-socket-bottom-left-corner)
-   (wall-brace minithumb-bl-place  0  1 key-socket-top-right-corner minithumb-bl-place  0  1 key-socket-top-left-corner)
-   (wall-brace minithumb-br-place -1  0 key-socket-top-left-corner minithumb-br-place -1  0 key-socket-bottom-left-corner)
-   (wall-brace minithumb-bl-place -1  0 key-socket-top-left-corner minithumb-bl-place -1  0 key-socket-bottom-left-corner)
-   ; minithumb corners
-   (wall-brace minithumb-br-place -1  0 key-socket-bottom-left-corner minithumb-br-place  0 -1 key-socket-bottom-left-corner)
-   (wall-brace minithumb-bl-place -1  0 key-socket-top-left-corner minithumb-bl-place  0  1 key-socket-top-left-corner)
-   ; minithumb tweeners
-   (wall-brace minithumb-mr-place  0 -1 key-socket-bottom-left-corner minithumb-br-place  0 -1 key-socket-bottom-right-corner)
-   (wall-brace minithumb-bl-place -1  0 key-socket-bottom-left-corner minithumb-br-place -1  0 key-socket-top-left-corner)
-   (wall-brace minithumb-tr-place  0 -1 minithumb-post-br (partial shape-place-at-key (+ innercol-offset 3) rows-last-index)  0 -1 key-socket-bottom-left-corner)
-   ; clunky bit on the top left minithumb connection  (normal connectors don't work well)
-   (bottom-hull
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) key-socket-location-dot))
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) key-socket-location-dot))
-    (minithumb-bl-place (translate (wall-locate2 -0.3 1) key-socket-top-right-corner))
-    (minithumb-bl-place (translate (wall-locate3 -0.3 1) key-socket-top-right-corner)))
-   (hull
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) key-socket-location-dot))
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) key-socket-location-dot))
-    (minithumb-bl-place (translate (wall-locate2 -0.3 1) key-socket-top-right-corner))
-    (minithumb-bl-place (translate (wall-locate3 -0.3 1) key-socket-top-right-corner))
-    (minithumb-tl-place key-socket-top-left-corner))
-   (hull
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 key-socket-location-dot)
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate1 -1 0) key-socket-location-dot))
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) key-socket-location-dot))
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) key-socket-location-dot))
-    (minithumb-tl-place key-socket-top-left-corner))
-   (hull
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 key-socket-location-dot)
-    (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate1 -1 0) key-socket-location-dot))
-    (shape-place-at-key 0 (- cornerrow innercol-offset) key-socket-bottom-left-corner)
-    (minithumb-tl-place key-socket-top-left-corner))
-   (hull
-    (minithumb-bl-place key-socket-top-right-corner)
-    (minithumb-bl-place (translate (wall-locate1 -0.3 1) key-socket-top-right-corner))
-    (minithumb-bl-place (translate (wall-locate2 -0.3 1) key-socket-top-right-corner))
-    (minithumb-bl-place (translate (wall-locate3 -0.3 1) key-socket-top-right-corner))
-    (minithumb-tl-place key-socket-top-left-corner))
-   ; connectors below the inner column to the thumb & second column
-   (if true
-     (union
-      (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-right-corner)
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner))
-      (hull
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner)
-       (shape-place-at-key 1 cornerrow key-socket-top-left-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner))
-      (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner))
-      (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner)
-       (minithumb-tl-place minithumb-post-tl))))))
 
 (def manuform-thumb-wall
   (union
@@ -1957,27 +1399,27 @@
    (hull
     (left-shape-place-at-key (- cornerrow innercol-offset) -1 key-socket-location-dot)
     (left-shape-place-at-key (- cornerrow innercol-offset) -1 (translate (wall-locate1 -1 0) key-socket-location-dot))
-    (shape-place-at-key 0 (- cornerrow innercol-offset) key-socket-bottom-left-corner)
-    (shape-place-at-key 0 (- cornerrow innercol-offset) (translate (wall-locate1 0 0) key-socket-bottom-left-corner))
+    (key-socket-bottom-left-corner-dot 0 (- cornerrow innercol-offset))
+    (key-socket-bottom-left-corner-dot 0 (- cornerrow innercol-offset) (translate (wall-locate1 0 0)))
     (thumb-tl-place thumb-post-tl))
    ; connectors below the inner column to the thumb & second column
    (if true
      (union
       (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-right-corner)
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner))
+       (key-socket-bottom-left-corner-dot 0 (dec cornerrow))
+       (key-socket-bottom-right-corner-dot 0 (dec cornerrow))
+       (key-socket-top-right-corner-dot 0 cornerrow))
       (hull
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner)
-       (shape-place-at-key 1 cornerrow key-socket-top-left-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner))
+       (key-socket-top-right-corner-dot 0 cornerrow)
+       (key-socket-top-left-corner-dot 1 cornerrow)
+       (key-socket-bottom-left-corner-dot 1 cornerrow))
       (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 0 cornerrow key-socket-top-right-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner))
+       (key-socket-bottom-left-corner-dot 0 (dec cornerrow))
+       (key-socket-top-right-corner-dot 0 cornerrow)
+       (key-socket-bottom-left-corner-dot 1 cornerrow))
       (hull
-       (shape-place-at-key 0 (dec cornerrow) key-socket-bottom-left-corner)
-       (shape-place-at-key 1 cornerrow key-socket-bottom-left-corner)
+       (key-socket-bottom-left-corner-dot 0 (dec cornerrow))
+       (key-socket-bottom-left-corner-dot 1 cornerrow)
        (thumb-tl-place thumb-post-tl))))
    (hull
     (thumb-ml-place key-socket-top-right-corner)
@@ -2022,8 +1464,8 @@
 					(partial left-shape-place-at-key y -1) -1 0 key-socket-location-dot
 				)
 				(hull
-					(shape-place-at-key 0 y key-socket-top-left-corner)
-					(shape-place-at-key 0 y key-socket-bottom-left-corner)
+					(key-socket-top-left-corner-dot 0 y)
+					(key-socket-bottom-left-corner-dot 0 y)
 					(left-shape-place-at-key y  1 key-socket-location-dot)
 					(left-shape-place-at-key y -1 key-socket-location-dot)
 				)
@@ -2037,8 +1479,8 @@
 					(partial left-shape-place-at-key y  1) -1 0 key-socket-location-dot
 				)
 				(hull
-					(shape-place-at-key 0 y key-socket-top-left-corner)
-					(shape-place-at-key 0 (dec y) key-socket-bottom-left-corner)
+					(key-socket-top-left-corner-dot 0 y)
+					(key-socket-bottom-left-corner-dot 0 (dec y))
 					(left-shape-place-at-key y 1 key-socket-location-dot)
 					(left-shape-place-at-key (dec y) -1 key-socket-location-dot)
 				)
@@ -2148,28 +1590,8 @@
     (def screw-offset-bl [-3.5 2 0])
     (def screw-offset-tm [9.5 -4.5 0])
     (def screw-offset-bm [13 -7 0]))
-(when (and (= thumb-style "cf") true)
-    (def screw-offset-bl [9 4 0])
-    (def screw-offset-tm [9.5 -4.5 0])
-    (def screw-offset-bm [13 -7 0]))
-(when (and (= thumb-style "cf") (false? true))
-    (def screw-offset-bl [-3.5 2 0])
-    (def screw-offset-tm [9.5 -4.5 0])
-    (def screw-offset-bm [13 -7 0]))
-(when (and (= thumb-style "mini") true)
-    (def screw-offset-bl [14 8 0])
-    (def screw-offset-tm [9.5 -4.5 0])
-    (def screw-offset-bm [-1 -7 0]))
-(when (and (= thumb-style "mini") (false? true))
-    (def screw-offset-bl [-1 4.2 0])
-    (def screw-offset-tm [9.5 -4.5 0])
-    (def screw-offset-bm [-1 -7 0]))
 (when (and (= thumb-style "manuform") true)
     (def screw-offset-bl [5 -6 0])
-    (def screw-offset-tm [9.5 -4.5 0])
-    (def screw-offset-bm [8 -1 0]))
-(when (and (= thumb-style "manuform") (false? true))
-    (def screw-offset-bl [-11.7 -8 0])
     (def screw-offset-tm [9.5 -4.5 0])
     (def screw-offset-bm [8 -1 0]))
 
@@ -2201,48 +1623,45 @@
             ;; Row connections
             (for [row (range first-15u-row (inc last-15u-row))]
               (triangle-mesh-hull
-               (shape-place-at-key columns-last-index row key-socket-top-right-corner)
+               (key-socket-top-right-corner-dot columns-last-index row)
                (shape-place-at-key columns-last-index row wide-post-tr)
-               (shape-place-at-key columns-last-index row key-socket-bottom-right-corner)
+               (key-socket-bottom-right-corner-dot columns-last-index row)
                (shape-place-at-key columns-last-index row wide-post-br)))
             (if-not (= last-15u-row extra-cornerrow) (for [row (range last-15u-row (inc last-15u-row))]
               (triangle-mesh-hull
-               (shape-place-at-key columns-last-index (inc row) key-socket-top-right-corner)
+               (key-socket-top-right-corner-dot columns-last-index (inc row))
                (shape-place-at-key columns-last-index row wide-post-br)
-               (shape-place-at-key columns-last-index (inc row) key-socket-bottom-right-corner))))
+               (key-socket-bottom-right-corner-dot columns-last-index (inc row)))))
             (if-not (= first-15u-row 0) (for [row (range (dec first-15u-row) first-15u-row)]
               (triangle-mesh-hull
-               (shape-place-at-key columns-last-index row key-socket-top-right-corner)
+               (key-socket-top-right-corner-dot columns-last-index row)
                (shape-place-at-key columns-last-index (inc row) wide-post-tr)
-               (shape-place-at-key columns-last-index row key-socket-bottom-right-corner))))
+               (key-socket-bottom-right-corner-dot columns-last-index row))))
 
             ;; Column connections
             (for [row (range first-15u-row last-15u-row)]
               (triangle-mesh-hull
-               (shape-place-at-key columns-last-index row key-socket-bottom-right-corner)
+               (key-socket-bottom-right-corner-dot columns-last-index row)
                (shape-place-at-key columns-last-index row wide-post-br)
-               (shape-place-at-key columns-last-index (inc row) key-socket-top-right-corner)
+               (key-socket-top-right-corner-dot columns-last-index (inc row))
                (shape-place-at-key columns-last-index (inc row) wide-post-tr)))
             (if-not (= last-15u-row extra-cornerrow) (for [row (range last-15u-row (inc last-15u-row))]
               (triangle-mesh-hull
-               (shape-place-at-key columns-last-index row key-socket-bottom-right-corner)
+               (key-socket-bottom-right-corner-dot columns-last-index row)
                (shape-place-at-key columns-last-index row wide-post-br)
-               (shape-place-at-key columns-last-index (inc row) key-socket-top-right-corner))))
+               (key-socket-top-right-corner-dot columns-last-index (inc row)))))
             (if-not (= first-15u-row 0) (for [row (range (dec first-15u-row) first-15u-row)]
               (triangle-mesh-hull
-               (shape-place-at-key columns-last-index row key-socket-bottom-right-corner)
+               (key-socket-bottom-right-corner-dot columns-last-index row)
                (shape-place-at-key columns-last-index (inc row) wide-post-tr)
-               (shape-place-at-key columns-last-index (inc row) key-socket-top-right-corner))))
+               (key-socket-top-right-corner-dot columns-last-index (inc row)))))
 ))))
 
 (def model-right (difference
                    (union
                      key-sockets-all-shapes
                      key-sockets-inner
-                     pinky-connectors
-                     extra-connectors
-                     connectors
-                     inner-connectors
+							key-sockets-interconnecting-mesh-shape
                      thumb-type
                      thumb-connector-type
                      (difference (union case-walls
@@ -2275,10 +1694,7 @@
               (union
                 key-sockets-all-shapes
                 key-sockets-inner
-                pinky-connectors
-                extra-connectors
-                connectors
-                inner-connectors
+					 key-sockets-interconnecting-mesh-shape
                 thumb-type
                 thumb-connector-type
                 case-walls

@@ -130,6 +130,32 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Thumb Cluster Settings ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def thumb-cluster-rows-count 3)
+(def thumb-cluster-columns-count 2)
+(def thumb-cluster-rows-middle-index 1)
+(def thumb-cluster-columns-middle-index 0)
+(def thumb-cluster-columns-base-curvature 0)
+(def thumb-cluster-rows-base-curvature 0)
+
+(defn thumb-cluster-key-is-15u? [column row]
+	(= column 0)
+)
+
+(defn thumb-cluster-key-exists? [column row]
+	true
+)
+
+(defn thumb-cluster-key-offset [column row]
+	[0 0 0]
+)
+
+(defn thumb-cluster-key-column-curvature [column row]
+	thumb-cluster-columns-base-curvature
+)
+
+(defn thumb-cluster-key-row-curvature [column row]
+	thumb-cluster-rows-base-curvature
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; GENERAL UTILITY FUNCTIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -260,7 +286,7 @@
 				(union
 					top-wall
 					left-wall
-					(if key-sockets-have-side-nubs? (with-fn 100 side-nub))
+					(when key-sockets-have-side-nubs? (with-fn 100 side-nub))
 				)
 
 			top-nub
@@ -352,7 +378,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Placement Functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (def cap-top-height (+ key-sockets-thickness sa-profile-key-height))
 
 ;; FIXME: That's too complicated to go without comment.
@@ -653,79 +678,246 @@
 	)
 )
 
-;;;;;;;;;;;;;;;;;;;;
-;; Manuform Thumb ;;
-;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; THUMB CLUSTER ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def thumborigin
-	(map +
-		(key-get-position
-			(+ innercol-offset 1)
-			cornerrow
-			[(/ key-sockets-outer-width 2) (- (/ key-sockets-outer-height 2)) 0]
+(def thumb-cluster-rows-last-index (dec thumb-cluster-rows-count))
+(def thumb-cluster-columns-last-index (dec thumb-cluster-columns-count))
+
+(def thumb-cluster-rows-index-list (range 0 thumb-cluster-rows-count))
+(def thumb-cluster-columns-index-list (range 0 thumb-cluster-columns-count))
+
+(defn thumb-cluster-key-row-radius [column row]
+	(+
+		(/
+			(/ (+ key-sockets-outer-height key-inter-column-margin) 2)
+			(Math/sin (/ (thumb-cluster-key-column-curvature column row) 2))
 		)
-		thumb-offsets
+		cap-top-height
 	)
 )
 
-(defn thumb-tr-place [shape]
-  (->> shape
-       (rotate (deg2rad  10) [1 0 0])
-       (rotate (deg2rad -23) [0 1 0])
-       (rotate (deg2rad  10) [0 0 1])
-       (translate thumborigin)
-       (translate [-12 -16 3])
-       ))
-(defn thumb-tl-place [shape]
-  (->> shape
-       (rotate (deg2rad  10) [1 0 0])
-       (rotate (deg2rad -23) [0 1 0])
-       (rotate (deg2rad  10) [0 0 1])
-       (translate thumborigin)
-       (translate [-32 -15 -2])))
-(defn thumb-mr-place [shape]
-  (->> shape
-       (rotate (deg2rad  -6) [1 0 0])
-       (rotate (deg2rad -34) [0 1 0])
-       (rotate (deg2rad  48) [0 0 1])
-       (translate thumborigin)
-       (translate [-29 -40 -13])
-       ))
-(defn thumb-ml-place [shape]
-  (->> shape
-       (rotate (deg2rad   6) [1 0 0])
-       (rotate (deg2rad -34) [0 1 0])
-       (rotate (deg2rad  40) [0 0 1])
-       (translate thumborigin)
-       (translate [-51 -25 -12])))
-(defn thumb-br-place [shape]
-  (->> shape
-       (rotate (deg2rad -16) [1 0 0])
-       (rotate (deg2rad -33) [0 1 0])
-       (rotate (deg2rad  54) [0 0 1])
-       (translate thumborigin)
-       (translate [-37.8 -55.3 -25.3])
-       ))
-(defn thumb-bl-place [shape]
-  (->> shape
-       (rotate (deg2rad  -4) [1 0 0])
-       (rotate (deg2rad -35) [0 1 0])
-       (rotate (deg2rad  52) [0 0 1])
-       (translate thumborigin)
-       (translate [-56.3 -43.3 -23.5])
-       ))
+(defn thumb-cluster-key-column-radius [column row]
+	(+
+		(/
+			(/ (+ key-sockets-outer-width key-inter-row-margin) 2)
+			(Math/sin (/ (thumb-cluster-key-row-curvature column row) 2))
+		)
+		cap-top-height
+	)
+)
 
-(defn thumb-1x-layout [shape]
-  (union
-   (thumb-mr-place shape)
-   (thumb-ml-place shape)
-   (thumb-br-place shape)
-   (thumb-bl-place shape)))
+(defn thumb-cluster-place-at-origin [shape]
+	(->> shape
+		(translate [0 0 0])
+	)
+)
 
-(defn thumb-15x-layout [shape]
-  (union
-   (thumb-tr-place shape)
-   (thumb-tl-place shape)))
+(defn thumb-cluster-key-apply-geometry
+	[
+		translate-fn
+		rotate-x-fn
+		rotate-y-fn column
+		row
+		shape
+	]
+	(let
+		[
+			column-radius (thumb-cluster-key-column-radius column row)
+			column-angle
+				(*
+					(thumb-cluster-key-row-curvature column row)
+					(- thumb-cluster-columns-middle-index column)
+				)
+
+			row-angle
+				(*
+					(thumb-cluster-key-column-curvature column row)
+					(- thumb-cluster-rows-middle-index row)
+				)
+
+			row-radius (thumb-cluster-key-row-radius column row)
+
+			placed-shape
+				(->> shape
+					;; Apply last touch offsets.
+					(translate-fn (thumb-cluster-key-offset column row))
+
+					;; Place the key in its row.
+					(translate-fn [0 0 (- row-radius)])
+					(rotate-x-fn  row-angle)
+					(translate-fn [0 0 row-radius])
+
+					;; Place the key in its column
+					(translate-fn [0 0 (- column-radius)])
+					(rotate-y-fn  column-angle)
+					(translate-fn [0 0 column-radius])
+				)
+		]
+		(->>
+			placed-shape
+			(thumb-cluster-place-at-origin)
+		)
+	)
+)
+
+(defn shape-place-at-thumb-cluster-key [column row shape]
+	(thumb-cluster-key-apply-geometry
+		translate
+		(fn [angle obj] (rotate angle [1 0 0] obj))
+		(fn [angle obj] (rotate angle [0 1 0] obj))
+		column
+		row
+		shape
+	)
+)
+
+;; Computes the absolute position of a position relative to a key
+(defn thumb-cluster-key-get-position [column row position]
+	(key-apply-geometry
+		(partial map +)
+		rotate-around-x
+		rotate-around-y
+		column
+		row
+		position
+	)
+)
+
+(def thumb-cluster-key-sockets-all-shapes
+	(apply union
+		(for
+			[
+				column thumb-cluster-columns-index-list
+				row thumb-cluster-rows-index-list
+				:when (thumb-cluster-key-exists? column row)
+			]
+			(->>
+				key-socket-shape
+				(shape-place-at-thumb-cluster-key column row)
+			)
+		)
+	)
+)
+
+(def thumb-cluster-key-caps-all-shapes
+	(apply union
+		(conj
+			(for
+				[
+					column thumb-cluster-columns-index-list
+					row thumb-cluster-rows-index-list
+					:when (thumb-cluster-key-exists? column row)
+				]
+				(->>
+					(sa-cap
+						(if (thumb-cluster-key-is-15u? column row) 1.5 1)
+					)
+					(shape-place-at-thumb-cluster-key column row)
+				)
+			)
+		)
+	)
+)
+
+(defn thumb-cluster-key-socket-bottom-right-corner-dot [column row]
+	(shape-place-at-thumb-cluster-key column row key-socket-bottom-right-corner)
+)
+
+(defn thumb-cluster-key-socket-top-right-corner-dot [column row]
+	(shape-place-at-thumb-cluster-key column row key-socket-top-right-corner)
+)
+
+(defn thumb-cluster-key-socket-bottom-left-corner-dot [column row]
+	(shape-place-at-thumb-cluster-key column row key-socket-bottom-left-corner)
+)
+
+(defn thumb-cluster-key-socket-top-left-corner-dot [column row]
+	(shape-place-at-thumb-cluster-key column row key-socket-top-left-corner)
+)
+
+(def thumb-cluster-key-sockets-interconnecting-mesh-shape
+	(apply
+		union
+		(concat
+			;; Interconnections within a row.
+			(for
+				[
+					column thumb-cluster-columns-index-list
+					row thumb-cluster-rows-index-list
+					:when
+						(and
+							(thumb-cluster-key-exists? (dec column) row)
+							(thumb-cluster-key-exists? column row)
+						)
+				]
+				(triangle-mesh-hull
+					(thumb-cluster-key-socket-top-right-corner-dot (dec column) row)
+					(thumb-cluster-key-socket-top-left-corner-dot column row)
+					(thumb-cluster-key-socket-bottom-right-corner-dot
+						(dec column)
+						row
+					)
+					(thumb-cluster-key-socket-bottom-left-corner-dot column row)
+				)
+			)
+			;; Interconnections within a column.
+			(for
+				[
+					column thumb-cluster-columns-index-list
+					row thumb-cluster-rows-index-list
+					:when
+						(and
+							(thumb-cluster-key-exists? column (dec row))
+							(thumb-cluster-key-exists? column row)
+						)
+				]
+				(triangle-mesh-hull
+					(thumb-cluster-key-socket-bottom-left-corner-dot
+						column
+						(dec row)
+					)
+					(thumb-cluster-key-socket-bottom-right-corner-dot
+						column
+						(dec row)
+					)
+					(thumb-cluster-key-socket-top-left-corner-dot column row)
+					(thumb-cluster-key-socket-top-right-corner-dot column row)
+				)
+			)
+			;; Diagonal interconnections (little bit not covered by horizontal and
+			;; vertical connections).
+			(for
+				[
+					column thumb-cluster-columns-index-list
+					row thumb-cluster-rows-index-list
+					:when
+						(and
+							(thumb-cluster-key-exists? (dec column) (dec row))
+							(thumb-cluster-key-exists? (dec column) row)
+							(thumb-cluster-key-exists? column (dec row))
+							(thumb-cluster-key-exists? column row)
+						)
+				]
+				(triangle-mesh-hull
+					(thumb-cluster-key-socket-bottom-left-corner-dot
+						(dec column)
+						(dec row)
+					)
+					(thumb-cluster-key-socket-bottom-right-corner-dot
+						column
+						(dec row)
+					)
+					(thumb-cluster-key-socket-top-right-corner-dot (dec column) row)
+					(thumb-cluster-key-socket-top-left-corner-dot column row)
+				)
+			)
+		)
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def larger-plate
   (let [plate-height (/ (- sa-double-length key-sockets-outer-height) 3)
@@ -903,6 +1095,7 @@
 		(handshakethumb-origin-transform 0 1 1)
 	)
 )
+
 (defn handshakethumb-10-place [shape]
 	(->> shape
 		(rotate (deg2rad 0) [1 0 0])
@@ -1657,58 +1850,74 @@
                (key-socket-top-right-corner-dot columns-last-index (inc row)))))
 ))))
 
-(def model-right (difference
-                   (union
-                     key-sockets-all-shapes
-                     key-sockets-inner
-							key-sockets-interconnecting-mesh-shape
-                     thumb-type
-                     thumb-connector-type
-                     (difference (union case-walls
-                                       ;; screw-insert-outers
-													 )
-                                 usb-holder-space
-                                 usb-holder-notch-l
-                                 usb-holder-notch-r
-                              ;;   screw-insert-holes
-											))
-                   (translate [0 0 -20] (cube 350 350 40))))
+(def model-right
+	(difference
+		(union
+			key-sockets-all-shapes
+			key-sockets-inner
+			key-sockets-interconnecting-mesh-shape
+			thumb-type
+			thumb-connector-type
+			(difference
+				(union
+					case-walls
+					;; screw-insert-outers
+				)
+				usb-holder-space
+				usb-holder-notch-l
+				usb-holder-notch-r
+				;; screw-insert-holes
+			)
+		)
+		(translate [0 0 -20] (cube 350 350 40))
+	)
+)
 
-(spit "things/right.scad"
-      (write-scad model-right))
+(spit "things/right.scad" (write-scad model-right))
 
-(spit "things/left.scad"
-      (write-scad (mirror [-1 0 0] model-right)))
+(spit "things/left.scad" (write-scad (mirror [-1 0 0] model-right)))
 
 (spit "things/right-test.scad"
-      (write-scad (union model-right
-                         thumbcaps-type
-                         caps)))
+	(write-scad
+		(union model-right thumbcaps-type caps)
+	)
+)
 
 (spit "things/right-plate.scad"
-      (write-scad
-        (extrude-linear
-          {:height 2.6 :center false}
-          (project
-            (difference
-              (union
-                key-sockets-all-shapes
-                key-sockets-inner
-					 key-sockets-interconnecting-mesh-shape
-                thumb-type
-                thumb-connector-type
-                case-walls
-                thumbcaps-fill-type
-                caps-fill
-                screw-insert-outers)
-              (translate [0 0 -10] screw-insert-screw-holes))))))
+	(write-scad
+		(extrude-linear
+			{:height 2.6 :center false}
+			(project
+				(difference
+					(union
+						key-sockets-all-shapes
+						key-sockets-inner
+						key-sockets-interconnecting-mesh-shape
+						thumb-type
+						thumb-connector-type
+						case-walls
+						thumbcaps-fill-type
+						caps-fill
+						screw-insert-outers
+					)
+					(translate [0 0 -10] screw-insert-screw-holes)
+				)
+			)
+		)
+	)
+)
 
 (spit "things/right-plate-laser.scad"
-      (write-scad
-       (cut
-        (translate [0 0 -0.1]
-                   (difference (union case-walls
-                                      screw-insert-outers)
-                               (translate [0 0 -10] screw-insert-screw-holes))))))
+	(write-scad
+		(cut
+			(translate [0 0 -0.1]
+				(difference
+					(union case-walls screw-insert-outers)
+					(translate [0 0 -10] screw-insert-screw-holes)
+				)
+			)
+		)
+	)
+)
 
 (defn -main [dum] 1)  ; dummy to make it easier to batch

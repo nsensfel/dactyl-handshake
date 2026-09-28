@@ -17,6 +17,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (declare rows-last-index)
 (declare columns-last-index)
+(declare thumb-cluster-rows-last-index)
+(declare thumb-cluster-columns-last-index)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; PARAMETERS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,7 +106,11 @@
 		;; Actual configuration:
 		(and
 			(== column columns-last-index)
-			(or (== row rows-last-index) (== row (dec rows-last-index)))
+			(or
+				(== row rows-last-index)
+				(== row (dec rows-last-index))
+				(== row (dec (dec rows-last-index)))
+			)
 		)
 			:void-no-walls
 		:else :socket
@@ -150,15 +156,21 @@
 (def thumb-cluster-columns-count 2)
 (def thumb-cluster-rows-middle-index 1)
 (def thumb-cluster-columns-middle-index 0)
-(def thumb-cluster-columns-base-curvature 0)
-(def thumb-cluster-rows-base-curvature 0)
+(def thumb-cluster-columns-base-curvature 0.1)
+(def thumb-cluster-rows-base-curvature 0.1)
 
 (defn thumb-cluster-key-is-1-5u? [column row]
-	(== column 0)
+	false ;;(== column 0)
 )
 
 (defn thumb-cluster-key-status [column row]
-	:socket
+	(cond
+		(> 0 column) :void
+		(> 0 row) :void
+		(< thumb-cluster-columns-last-index column) :void
+		(< thumb-cluster-rows-last-index row) :void
+		:else :socket
+	)
 )
 
 (defn thumb-cluster-key-offset [column row]
@@ -836,9 +848,24 @@
 )
 
 (defn thumb-cluster-place-at-origin [shape]
-	(->> shape
-		(translate [0 0 0])
-		(shape-place-at-key columns-last-index rows-last-index)
+	(let
+		[
+			[x y z] (key-get-position columns-last-index rows-last-index [0 0 0])
+		]
+		(->> shape
+			(rotate (/ (- pi) 8) [1 0 0])
+			(rotate (/ pi 2) [0 1 0])
+			(rotate (/ pi 2) [1 0 0])
+			(translate
+				[
+					(/ (- key-sockets-outer-width) 2)
+					(/ key-sockets-outer-width 2)
+					(* 2 key-sockets-outer-height)
+				]
+			)
+			(translate [x y z])
+			;;(shape-place-at-key columns-last-index rows-last-index)
+		)
 	)
 )
 
@@ -904,7 +931,7 @@
 
 ;; Computes the absolute position of a position relative to a key
 (defn thumb-cluster-key-get-position [column row position]
-	(key-apply-geometry
+	(thumb-cluster-key-apply-geometry
 		(partial map +)
 		rotate-around-x
 		rotate-around-y
@@ -950,14 +977,25 @@
 	)
 )
 
+(defn thumb-cluster-key-socket-bottom-right-corner-relative-dot [column row]
+	(if (thumb-cluster-key-is-1-5u? column row)
+		key-1-5u-socket-bottom-right-corner-relative-dot
+		key-1u-socket-bottom-right-corner-relative-dot
+	)
+)
+
 (defn thumb-cluster-key-socket-bottom-right-corner-absolute-dot [column row]
 	(shape-place-at-thumb-cluster-key
 		column
 		row
-		(if (thumb-cluster-key-is-1-5u? column row)
-			key-1-5u-socket-bottom-right-corner-relative-dot
-			key-1u-socket-bottom-right-corner-relative-dot
-		)
+		(thumb-cluster-key-socket-bottom-right-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-top-right-corner-relative-dot [column row]
+	(if (thumb-cluster-key-is-1-5u? column row)
+		key-1-5u-socket-top-right-corner-relative-dot
+		key-1u-socket-top-right-corner-relative-dot
 	)
 )
 
@@ -965,10 +1003,14 @@
 	(shape-place-at-thumb-cluster-key
 		column
 		row
-		(if (thumb-cluster-key-is-1-5u? column row)
-			key-1-5u-socket-top-right-corner-relative-dot
-			key-1u-socket-top-right-corner-relative-dot
-		)
+		(thumb-cluster-key-socket-top-right-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-bottom-left-corner-relative-dot [column row]
+	(if (thumb-cluster-key-is-1-5u? column row)
+		key-1-5u-socket-bottom-left-corner-relative-dot
+		key-1u-socket-bottom-left-corner-relative-dot
 	)
 )
 
@@ -976,10 +1018,14 @@
 	(shape-place-at-thumb-cluster-key
 		column
 		row
-		(if (thumb-cluster-key-is-1-5u? column row)
-			key-1-5u-socket-bottom-left-corner-relative-dot
-			key-1u-socket-bottom-left-corner-relative-dot
-		)
+		(thumb-cluster-key-socket-bottom-left-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-top-left-corner-relative-dot [column row]
+	(if (thumb-cluster-key-is-1-5u? column row)
+		key-1-5u-socket-top-left-corner-relative-dot
+		key-1u-socket-top-left-corner-relative-dot
 	)
 )
 
@@ -987,10 +1033,7 @@
 	(shape-place-at-thumb-cluster-key
 		column
 		row
-		(if (thumb-cluster-key-is-1-5u? column row)
-			key-1-5u-socket-top-left-corner-relative-dot
-			key-1u-socket-top-left-corner-relative-dot
-		)
+		(thumb-cluster-key-socket-top-left-corner-relative-dot column row)
 	)
 )
 
@@ -1012,13 +1055,22 @@
 						)
 				]
 				(hull-triangle-mesh
-					(thumb-cluster-key-socket-top-right-corner-absolute-dot (dec column) row)
-					(thumb-cluster-key-socket-top-left-corner-absolute-dot column row)
+					(thumb-cluster-key-socket-top-right-corner-absolute-dot
+						(dec column)
+						row
+					)
+					(thumb-cluster-key-socket-top-left-corner-absolute-dot
+						column
+						row
+					)
 					(thumb-cluster-key-socket-bottom-right-corner-absolute-dot
 						(dec column)
 						row
 					)
-					(thumb-cluster-key-socket-bottom-left-corner-absolute-dot column row)
+					(thumb-cluster-key-socket-bottom-left-corner-absolute-dot
+						column
+						row
+					)
 				)
 			)
 			;; Interconnections within a column.
@@ -1043,8 +1095,14 @@
 						column
 						(dec row)
 					)
-					(thumb-cluster-key-socket-top-left-corner-absolute-dot column row)
-					(thumb-cluster-key-socket-top-right-corner-absolute-dot column row)
+					(thumb-cluster-key-socket-top-left-corner-absolute-dot
+						column
+						row
+					)
+					(thumb-cluster-key-socket-top-right-corner-absolute-dot
+						column
+						row
+					)
 				)
 			)
 			;; Diagonal interconnections (little bit not covered by horizontal and
@@ -1067,16 +1125,22 @@
 						)
 				]
 				(hull-triangle-mesh
-					(thumb-cluster-key-socket-bottom-left-corner-absolute-dot
+					(thumb-cluster-key-socket-bottom-right-corner-absolute-dot
 						(dec column)
 						(dec row)
 					)
-					(thumb-cluster-key-socket-bottom-right-corner-absolute-dot
+					(thumb-cluster-key-socket-bottom-left-corner-absolute-dot
 						column
 						(dec row)
 					)
-					(thumb-cluster-key-socket-top-right-corner-absolute-dot (dec column) row)
-					(thumb-cluster-key-socket-top-left-corner-absolute-dot column row)
+					(thumb-cluster-key-socket-top-right-corner-absolute-dot
+						(dec column)
+						row
+					)
+					(thumb-cluster-key-socket-top-left-corner-absolute-dot
+						column
+						row
+					)
 				)
 			)
 		)
@@ -1308,7 +1372,7 @@
 )
 
 ;; TODO: rename this.
-(defn key-wall-brace
+(defn wall-and-case-upper-lip-shapes-between-keys
 	[
 		column-1
 		row-1
@@ -1336,19 +1400,23 @@
 			[x columns-index-list]
 			;; TODO: Account for (get-key-status ...)
 			(union
-				(key-wall-brace
-					x 0 :north (key-socket-top-left-corner-relative-dot x 0)
-					x 0 :north (key-socket-top-right-corner-relative-dot x 0)
+				(when (not (= (key-status x 0) :void-no-walls))
+					(wall-and-case-upper-lip-shapes-between-keys
+						x 0 :north (key-socket-top-left-corner-relative-dot x 0)
+						x 0 :north (key-socket-top-right-corner-relative-dot x 0)
+					)
 				)
-				(key-wall-brace
-					x
-					columns-last-index
-					:south
-					(key-socket-bottom-left-corner-relative-dot x columns-last-index)
-					x
-					columns-last-index
-					:south
-					(key-socket-bottom-right-corner-relative-dot x columns-last-index)
+				(when (not (= (key-status x columns-last-index) :void-no-walls))
+					(wall-and-case-upper-lip-shapes-between-keys
+						x
+						columns-last-index
+						:south
+						(key-socket-bottom-left-corner-relative-dot x columns-last-index)
+						x
+						columns-last-index
+						:south
+						(key-socket-bottom-right-corner-relative-dot x columns-last-index)
+					)
 				)
 			)
 		)
@@ -1356,11 +1424,11 @@
 			[x (range 1 columns-count)]
 			;; TODO: Account for (get-key-status ...)
 			(union
-				(key-wall-brace
+				(wall-and-case-upper-lip-shapes-between-keys
 					x 0 :north (key-socket-top-left-corner-relative-dot x 0)
 					(dec x) 0 :north (key-socket-top-right-corner-relative-dot (dec x) 0)
 				)
-				(key-wall-brace
+				(wall-and-case-upper-lip-shapes-between-keys
 					x
 					columns-last-index
 					:south
@@ -1377,11 +1445,11 @@
 			[y rows-index-list]
 			;; TODO: Account for (get-key-status ...)
 			(union
-				(key-wall-brace
+				(wall-and-case-upper-lip-shapes-between-keys
 					0 y :west (key-socket-top-left-corner-relative-dot 0 y)
 					0 y :west (key-socket-bottom-left-corner-relative-dot 0 y)
 				)
-				(key-wall-brace
+				(wall-and-case-upper-lip-shapes-between-keys
 					columns-last-index
 					y
 					:east
@@ -1397,11 +1465,11 @@
 			[y (range 1 rows-count)]
 			;; TODO: Account for (get-key-status ...)
 			(union
-				(key-wall-brace
+				(wall-and-case-upper-lip-shapes-between-keys
 					0 y :west (key-socket-top-left-corner-relative-dot 0 y)
 					0 (dec y) :west (key-socket-bottom-left-corner-relative-dot 0 (dec y))
 				)
-				(key-wall-brace
+				(wall-and-case-upper-lip-shapes-between-keys
 					columns-last-index
 					y
 					:east
@@ -1418,7 +1486,7 @@
 		;; they rely on out-of-bounds indices doesn't help. Offsets applied to
 		;; border keys aren't reflected as a result.
 		;; FIXME: need a proper version of this.
-		(key-wall-brace
+		(wall-and-case-upper-lip-shapes-between-keys
 			columns-last-index
 			rows-last-index
 			:south
@@ -1434,7 +1502,7 @@
 				rows-last-index
 			)
 		)
-		(key-wall-brace
+		(wall-and-case-upper-lip-shapes-between-keys
 			(+ columns-last-index 1)
 			0
 			:north
@@ -1450,7 +1518,7 @@
 				0
 			)
 		)
-		(key-wall-brace
+		(wall-and-case-upper-lip-shapes-between-keys
 			0
 			rows-last-index
 			:south
@@ -1466,7 +1534,7 @@
 				rows-last-index
 			)
 		)
-		(key-wall-brace
+		(wall-and-case-upper-lip-shapes-between-keys
 			0
 			0
 			:north
@@ -1480,6 +1548,142 @@
 			(key-socket-top-right-corner-relative-dot
 				0
 				0
+			)
+		)
+	)
+)
+
+(def thumb-cluster-case-walls
+	(union
+		(for
+			[x thumb-cluster-columns-index-list]
+			;; TODO: Account for (get-key-status ...)
+			(union
+				;; lip on top
+				(case-upper-lip-shapes
+					(partial shape-place-at-thumb-cluster-key x 0)
+					:north
+					(key-socket-top-left-corner-relative-dot x 0)
+
+					(partial shape-place-at-thumb-cluster-key x 0)
+					:north
+					(key-socket-top-right-corner-relative-dot x 0)
+				)
+				(when (not (= (thumb-cluster-key-status (dec x) 0) :void))
+					(case-upper-lip-shapes
+						(partial shape-place-at-thumb-cluster-key (dec x) 0)
+						:north
+						(key-socket-top-right-corner-relative-dot (dec x) 0)
+
+						(partial shape-place-at-thumb-cluster-key x 0)
+						:north
+						(key-socket-top-left-corner-relative-dot x 0)
+					)
+				)
+				;; link to case at the bottom
+				;; FIXME: that doesn't work well and part of the hull crosses where
+				;; the switch should be.
+				(hull
+					(thumb-cluster-key-socket-bottom-left-corner-absolute-dot
+						x
+						thumb-cluster-rows-last-index
+					)
+					(key-socket-top-right-corner-absolute-dot
+						columns-last-index
+						(- rows-last-index x)
+					)
+					(thumb-cluster-key-socket-bottom-right-corner-absolute-dot
+						x
+						thumb-cluster-rows-last-index
+					)
+					(key-socket-bottom-right-corner-absolute-dot
+						columns-last-index
+						(- rows-last-index x)
+					)
+				)
+			)
+		)
+		(for
+			[y thumb-cluster-rows-index-list]
+			;; TODO: Account for (get-key-status ...)
+			(union
+				;; lip on "left" side
+				(case-upper-lip-shapes
+					(partial shape-place-at-thumb-cluster-key 0 y)
+					:west
+					(key-socket-top-left-corner-relative-dot 0 y)
+
+					(partial shape-place-at-thumb-cluster-key 0 y)
+					:west
+					(key-socket-bottom-left-corner-relative-dot 0 y)
+				)
+				(when (not (= (thumb-cluster-key-status 0 (dec y)) :void))
+					(case-upper-lip-shapes
+						(partial shape-place-at-thumb-cluster-key 0 (dec y))
+						:west
+						(key-socket-bottom-left-corner-relative-dot 0 (dec y))
+
+						(partial shape-place-at-thumb-cluster-key 0 y)
+						:west
+						(key-socket-top-left-corner-relative-dot 0 y)
+					)
+				)
+				;; lip on "right" side
+				(case-upper-lip-shapes
+					(partial shape-place-at-thumb-cluster-key
+						thumb-cluster-columns-last-index
+						y
+					)
+					:east
+					(key-socket-top-right-corner-relative-dot
+						thumb-cluster-columns-last-index
+						y
+					)
+
+					(partial shape-place-at-thumb-cluster-key
+						thumb-cluster-columns-last-index
+						y
+					)
+					:east
+					(key-socket-bottom-right-corner-relative-dot
+						thumb-cluster-columns-last-index
+						y
+					)
+				)
+				(when
+					(not
+						(=
+							(thumb-cluster-key-status
+								thumb-cluster-columns-last-index
+								(dec y)
+							)
+							:void
+						)
+					)
+					(case-upper-lip-shapes
+						(partial
+							shape-place-at-thumb-cluster-key
+							thumb-cluster-columns-last-index
+							(dec y)
+						)
+						:east
+						(key-socket-bottom-right-corner-relative-dot
+							thumb-cluster-columns-last-index
+							(dec y)
+						)
+
+						(partial
+							shape-place-at-thumb-cluster-key
+							thumb-cluster-columns-last-index
+							y
+						)
+						:east
+						(key-socket-top-right-corner-relative-dot
+							thumb-cluster-columns-last-index
+							y
+						)
+					)
+				)
 			)
 		)
 	)
@@ -1510,12 +1714,11 @@
 		(union
 			key-sockets-all-shapes
 			key-sockets-interconnecting-mesh-shape
-			case-walls
+			thumb-cluster-key-sockets-all-shapes
+			thumb-cluster-key-sockets-interconnecting-mesh-shape
+			thumb-cluster-case-walls
 			(difference
-				;;(union
-					;;case-walls
-					;; screw-insert-outers
-				;;)
+				case-walls
 				usb-holder-space
 				usb-holder-notch-l
 				usb-holder-notch-r

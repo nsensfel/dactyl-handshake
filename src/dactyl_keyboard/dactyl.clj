@@ -1406,16 +1406,17 @@
 						x 0 :north (key-socket-top-right-corner-relative-dot x 0)
 					)
 				)
-				(when (not (= (key-status x columns-last-index) :void-no-walls))
+				(when (not (= (key-status x rows-last-index) :void-no-walls))
 					(wall-and-case-upper-lip-shapes-between-keys
 						x
-						columns-last-index
+						rows-last-index
 						:south
-						(key-socket-bottom-left-corner-relative-dot x columns-last-index)
+						(key-socket-bottom-left-corner-relative-dot x rows-last-index)
+
 						x
-						columns-last-index
+						rows-last-index
 						:south
-						(key-socket-bottom-right-corner-relative-dot x columns-last-index)
+						(key-socket-bottom-right-corner-relative-dot x rows-last-index)
 					)
 				)
 			)
@@ -1425,18 +1426,29 @@
 			;; TODO: Account for (get-key-status ...)
 			(union
 				(wall-and-case-upper-lip-shapes-between-keys
-					x 0 :north (key-socket-top-left-corner-relative-dot x 0)
-					(dec x) 0 :north (key-socket-top-right-corner-relative-dot (dec x) 0)
+					x
+					0
+					:north
+					(key-socket-top-left-corner-relative-dot x 0)
+
+					(dec x)
+					0
+					:north
+					(key-socket-top-right-corner-relative-dot (dec x) 0)
 				)
 				(wall-and-case-upper-lip-shapes-between-keys
 					x
-					columns-last-index
+					rows-last-index
 					:south
-					(key-socket-bottom-left-corner-relative-dot x columns-last-index)
+					(key-socket-bottom-left-corner-relative-dot x rows-last-index)
+
 					(dec x)
-					columns-last-index
+					rows-last-index
 					:south
-					(key-socket-bottom-right-corner-relative-dot (dec x) columns-last-index)
+					(key-socket-bottom-right-corner-relative-dot
+						(dec x)
+						rows-last-index
+					)
 				)
 			)
 		)
@@ -1684,6 +1696,36 @@
 						)
 					)
 				)
+			)
+		)
+		(case-upper-lip-shapes
+			(partial shape-place-at-thumb-cluster-key 0 0)
+			:west
+			(key-socket-top-left-corner-relative-dot 0 0)
+
+			(partial shape-place-at-thumb-cluster-key 0 0)
+			:north
+			(key-socket-top-left-corner-relative-dot 0 0)
+		)
+		(case-upper-lip-shapes
+			(partial shape-place-at-thumb-cluster-key
+				thumb-cluster-columns-last-index
+				0
+			)
+			:east
+			(key-socket-top-right-corner-relative-dot
+				thumb-cluster-columns-last-index
+				0
+			)
+
+			(partial shape-place-at-thumb-cluster-key
+				thumb-cluster-columns-last-index
+				0
+			)
+			:north
+			(key-socket-top-right-corner-relative-dot
+				thumb-cluster-columns-last-index
+				0
 			)
 		)
 	)

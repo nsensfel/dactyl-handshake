@@ -43,10 +43,10 @@
 (def wall-thickness 2)
 
 ;; Margin between two rows (vertical space between keys).
-(def key-inter-row-margin 2.5)
+(defn key-inter-row-margin [column row] 1.0)
 
 ;; Margin between two columns (horizontal space between keys).
-(def key-inter-column-margin 1.0)
+(defn key-inter-column-margin [column row] 1.0)
 
 (def shell-thickness 4.5)
 
@@ -478,6 +478,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 (def cap-top-height (+ key-sockets-thickness sa-profile-key-height))
 
+(defn key-outer-height [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal key-sockets-1-5u-horizontal-outer-height
+		:s1-5u-vertical key-sockets-1-5u-vertical-outer-height
+		:s1u key-sockets-1u-outer-height
+	)
+)
+
+(defn key-outer-width [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal key-sockets-1-5u-horizontal-outer-width
+		:s1-5u-vertical key-sockets-1-5u-vertical-outer-width
+		:s1u key-sockets-1u-outer-width
+	)
+)
+
 ;; FIXME: That's too complicated to go without comment.
 ;; If I understand it correctly, this is computing the horizontal position of a
 ;; key.
@@ -486,11 +502,7 @@
 		(/
 			(/
 				(+
-					(case (key-type column row)
-						:s1-5u-horizontal key-sockets-1-5u-horizontal-outer-height
-						:s1-5u-vertical key-sockets-1-5u-vertical-outer-height
-						:s1u key-sockets-1u-outer-height
-					)
+					(key-outer-height column row)
 					key-inter-row-margin
 				)
 				2
@@ -508,11 +520,7 @@
 		(/
 			(/
 				(+
-					(case (key-type column row)
-						:s1-5u-horizontal key-sockets-1-5u-horizontal-outer-width
-						:s1-5u-vertical key-sockets-1-5u-vertical-outer-width
-						:s1u key-sockets-1u-outer-width
-					)
+					(key-outer-width column row)
 					key-inter-column-margin
 				)
 				2
@@ -538,10 +546,107 @@
 	)
 )
 
+
+;;(defn key-compute-location-and-attitude
+(defn key-apply-geometry
+	[
+		translate-fn
+		rotate-x-fn
+		rotate-y-fn
+		column
+		row
+		shape
+	]
+	(let*
+		[
+			column-range-step (if (< columns-middle-index column) 1 -1)
+			column-indices (range columns-middle-index column column-range-step)
+			row-range-step (if (< rows-middle-index row) 1 -1)
+			row-indices (range rows-middle-index row row-range-step)
+
+			placed-in-column
+				(if (== rows-middle-index row)
+					shape
+					(reduce
+						(fn [shape-step row-step]
+							(translate-fn
+								[
+									0
+									(*
+										(+
+											(/ (key-outer-height column row-step) 2)
+											(/
+												(key-outer-height
+													column
+													(+ row-step row-range-step)
+												)
+												2
+											)
+											(key-inter-row-margin column row-step)
+										)
+										row-range-step
+									)
+									key-sockets-thickness
+								]
+								(rotate-x-fn
+									(*
+										(key-column-curvature column row-step)
+										row-range-step
+									)
+									shape-step
+								)
+							)
+						)
+						shape
+						row-indices
+					)
+				)
+			placed-in-column-and-row
+				(if (== columns-middle-index column)
+					placed-in-column
+					(reduce
+						(fn [shape-step column-step]
+							(translate-fn
+								[
+									(*
+										(+
+											(/ (key-outer-width column-step row) 2)
+											(/ (key-outer-width (+ column-step column-range-step) row) 2)
+											(key-inter-column-margin column-step row)
+										)
+										column-range-step
+									)
+									0
+									0
+								]
+								(rotate-y-fn
+									(*
+										(key-row-curvature column-step row)
+										column-range-step
+									)
+									shape-step
+								)
+							)
+						)
+						placed-in-column
+						column-indices
+					)
+				)
+		]
+
+		;; Lift to the keyboard's center height.
+		(translate-fn
+			[0 0 keyboard-center-height]
+			;; Apply the keyboard's tenting angle.
+			(rotate-y-fn keyboard-tenting-angle placed-in-column-and-row)
+		)
+	)
+)
+
 ;; Compute or place a shape at a key's location.
 ;; FIXME: this is not viable with keys of differing shape. A version that
 ;; computes attitude depending on "previous" keys would be more dynamic.
-(defn key-apply-geometry [translate-fn rotate-x-fn rotate-y-fn column row shape]
+(defn key-apply-geometry-old [translate-fn rotate-x-fn rotate-y-fn column row shape]
 	(let
 		[
 			column-radius (key-column-radius column row)
@@ -714,183 +819,131 @@
 	)
 )
 
-(def key-1u-socket-top-right-corner-relative-dot
+(defn key-sockets-top-right-corner-relative-dot [height width]
 	(translate
 		[
-			(- (/ key-sockets-1u-outer-width 2) location-dot-half-size)
-			(- (/ key-sockets-1u-outer-height 2) location-dot-half-size)
+			(- (/ width 2) location-dot-half-size)
+			(- (/ height 2) location-dot-half-size)
 			0
 		]
 		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-top-left-corner-relative-dot [height width]
+	(translate
+		[
+			(+ (/ width -2) location-dot-half-size)
+			(- (/ height 2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-bottom-left-corner-relative-dot [height width]
+	(translate
+		[
+			(+ (/ width -2) location-dot-half-size)
+			(+ (/ height -2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-bottom-right-corner-relative-dot [height width]
+	(translate
+		[
+			(- (/ width 2) location-dot-half-size)
+			(+ (/ height -2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(def key-1u-socket-top-right-corner-relative-dot
+	(key-sockets-top-right-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
 	)
 )
 
 (def key-1u-socket-top-left-corner-relative-dot
-	(translate
-		[
-			(+ (/ key-sockets-1u-outer-width -2) location-dot-half-size)
-			(- (/ key-sockets-1u-outer-height 2) location-dot-half-size)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-top-left-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
 	)
 )
 
 (def key-1u-socket-bottom-left-corner-relative-dot
-	(translate
-		[
-			(+ (/ key-sockets-1u-outer-width -2) location-dot-half-size)
-			(+ (/ key-sockets-1u-outer-height -2) location-dot-half-size)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-bottom-left-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
 	)
 )
 
 (def key-1u-socket-bottom-right-corner-relative-dot
-	(translate
-		[
-			(- (/ key-sockets-1u-outer-width 2) location-dot-half-size)
-			(+ (/ key-sockets-1u-outer-height -2) location-dot-half-size)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-bottom-right-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
 	)
 )
 
 (def key-1-5u-horizontal-socket-top-right-corner-relative-dot
-	(translate
-		[
-			(-
-				(/ key-sockets-1-5u-horizontal-outer-width 2)
-				location-dot-half-size
-			)
-			(-
-				(/ key-sockets-1-5u-horizontal-outer-height 2)
-				location-dot-half-size
-			)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-top-right-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
 	)
 )
 
 (def key-1-5u-horizontal-socket-top-left-corner-relative-dot
-	(translate
-		[
-			(+
-				(/ key-sockets-1-5u-horizontal-outer-width -2)
-				location-dot-half-size
-			)
-			(-
-				(/ key-sockets-1-5u-horizontal-outer-height 2)
-				location-dot-half-size
-			)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-top-left-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
 	)
 )
 
 (def key-1-5u-horizontal-socket-bottom-left-corner-relative-dot
-	(translate
-		[
-			(+
-				(/ key-sockets-1-5u-horizontal-outer-width -2)
-				location-dot-half-size
-			)
-			(+
-				(/ key-sockets-1-5u-horizontal-outer-height -2)
-				location-dot-half-size
-			)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-bottom-left-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
 	)
 )
 
 (def key-1-5u-horizontal-socket-bottom-right-corner-relative-dot
-	(translate
-		[
-			(-
-				(/ key-sockets-1-5u-horizontal-outer-width 2)
-				location-dot-half-size
-			)
-			(+
-				(/ key-sockets-1-5u-horizontal-outer-height -2)
-				location-dot-half-size
-			)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-bottom-right-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
 	)
 )
 
 (def key-1-5u-vertical-socket-top-right-corner-relative-dot
-	(translate
-		[
-			(-
-				(/ key-sockets-1-5u-vertical-outer-width 2)
-				location-dot-half-size
-			)
-			(-
-				(/ key-sockets-1-5u-vertical-outer-height 2)
-				location-dot-half-size
-			)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-top-right-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
 	)
 )
 
 (def key-1-5u-vertical-socket-top-left-corner-relative-dot
-	(translate
-		[
-			(+
-				(/ key-sockets-1-5u-vertical-outer-width -2)
-				location-dot-half-size
-			)
-			(-
-				(/ key-sockets-1-5u-vertical-outer-height 2)
-				location-dot-half-size
-			)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-top-left-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
 	)
 )
 
 (def key-1-5u-vertical-socket-bottom-left-corner-relative-dot
-	(translate
-		[
-			(+
-				(/ key-sockets-1-5u-vertical-outer-width -2)
-				location-dot-half-size
-			)
-			(+
-				(/ key-sockets-1-5u-vertical-outer-height -2)
-				location-dot-half-size
-			)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-bottom-left-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
 	)
 )
 
 (def key-1-5u-vertical-socket-bottom-right-corner-relative-dot
-	(translate
-		[
-			(-
-				(/ key-sockets-1-5u-vertical-outer-width 2)
-				location-dot-half-size
-			)
-			(+
-				(/ key-sockets-1-5u-vertical-outer-height -2)
-				location-dot-half-size
-			)
-			0
-		]
-		key-socket-location-dot
+	(key-sockets-bottom-right-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
 	)
 )
 
@@ -2055,17 +2108,17 @@
 	(difference
 		(union
 			key-sockets-all-shapes
-			key-sockets-interconnecting-mesh-shape
-			thumb-cluster-key-sockets-all-shapes
-			thumb-cluster-key-sockets-interconnecting-mesh-shape
-			thumb-cluster-case-walls
-			(difference
-				case-walls
-				usb-holder-space
-				usb-holder-notch-l
-				usb-holder-notch-r
-				;; screw-insert-holes
-			)
+;;			key-sockets-interconnecting-mesh-shape
+;;			thumb-cluster-key-sockets-all-shapes
+;;			thumb-cluster-key-sockets-interconnecting-mesh-shape
+;;			thumb-cluster-case-walls
+;;			(difference
+;;				case-walls
+;;				usb-holder-space
+;;				usb-holder-notch-l
+;;				usb-holder-notch-r
+;;				;; screw-insert-holes
+;;			)
 		)
 		(translate [0 0 -20] (cube 350 350 40))
 	)

@@ -155,7 +155,7 @@
 (def thumb-cluster-rows-count 2)
 (def thumb-cluster-columns-count 3)
 (def thumb-cluster-rows-middle-index 0)
-(def thumb-cluster-columns-middle-index 1)
+(def thumb-cluster-columns-middle-index (dec thumb-cluster-columns-count))
 (def thumb-cluster-columns-base-curvature 0.1)
 (def thumb-cluster-rows-base-curvature -0.1)
 
@@ -1191,7 +1191,7 @@
 )
 
 ;; Computes the absolute position of a position relative to a key
-(defn thumb-cluster-key-get-position [column row position]
+(defn thumb-cluster-key-get-base-position [column row position]
 	(thumb-cluster-key-apply-base-geometry
 		(partial map +)
 		rotate-around-x
@@ -1211,121 +1211,13 @@
 		row
 		shape
 	]
-	(let*
+	(let
 		[
-			column-range-step
-				(if (< thumb-cluster-columns-middle-index column) 1 -1)
-
-			column-indices
-				(range thumb-cluster-columns-middle-index column column-range-step)
-
-			row-range-step
-				(if (< thumb-cluster-rows-middle-index row) 1 -1)
-
-			row-indices
-				(range thumb-cluster-rows-middle-index row row-range-step)
-
-			adjusted-shape
-				(translate-fn
-					(thumb-cluster-key-offset column row)
-					shape
-				)
-
-			placed-in-column
-				(if (== thumb-cluster-rows-middle-index row)
-					adjusted-shape
-					(reduce
-						(fn [shape-step row-step]
-							(translate-fn
-								[
-									0
-									(*
-										(+
-											(/
-												(thumb-cluster-key-outer-height
-													column
-													row-step
-												)
-												2
-											)
-											(/
-												(thumb-cluster-key-outer-height
-													column
-													(+ row-step row-range-step)
-												)
-												2
-											)
-											(thumb-cluster-key-inter-row-margin
-												column
-												row-step
-											)
-										)
-										row-range-step
-									)
-									0
-								]
-								(rotate-x-fn
-									(*
-										(thumb-cluster-key-column-curvature
-											column
-											row-step
-										)
-										row-range-step
-									)
-									shape-step
-								)
-							)
-						)
-						adjusted-shape
-						row-indices
-					)
-				)
-
-			placed-in-column-and-row
-				(if (== thumb-cluster-columns-middle-index column)
-					placed-in-column
-					(reduce
-						(fn [shape-step column-step]
-							(translate-fn
-								[
-									(*
-										(+
-											(/
-												(thumb-cluster-key-outer-width
-													column-step
-													row
-												)
-												2
-											)
-											(/
-												(thumb-cluster-key-outer-width
-													(+ column-step column-range-step)
-													row
-												)
-												2
-											)
-											(thumb-cluster-key-inter-column-margin
-												column-step
-												row
-											)
-										)
-										column-range-step
-									)
-									0
-									0
-								]
-								(rotate-y-fn
-									(*
-										(thumb-cluster-key-row-curvature column-step row)
-										column-range-step
-									)
-									shape-step
-								)
-							)
-						)
-						placed-in-column
-						column-indices
-					)
+			[top-x top-y top-z]
+				(thumb-cluster-key-get-base-position
+					thumb-cluster-columns-last-index
+					0
+					[0 0 0]
 				)
 		]
 		(translate-fn
@@ -1335,15 +1227,34 @@
 				(rotate-y-fn
 					(/ pi 2)
 					(translate-fn
+						;; Trying to set it at the top of the base keyboard key,
+						;; but that's not quite right. This may be related to
+						;; the computation being centered around a row and column.
 						[
 							(+
 								(/ (key-outer-height columns-last-index 0) -2)
-								(/ (* (key-outer-height columns-last-index 0) 3) -2)
+								(/
+									(+
+										(thumb-cluster-key-outer-width
+											thumb-cluster-columns-last-index
+											0
+										)
+										top-x
+									)
+									-2
+								)
 							)
-							(/ (key-outer-width columns-last-index 0) 2)
+							(/ (key-outer-height columns-last-index 0) 2)
 							0
 						]
-						placed-in-column-and-row
+						(thumb-cluster-key-apply-base-geometry
+							translate-fn
+							rotate-x-fn
+							rotate-y-fn
+							column
+							row
+							shape
+						)
 					)
 				)
 			)

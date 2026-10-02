@@ -43,7 +43,7 @@
 (def wall-thickness 2)
 
 ;; Margin between two rows (vertical space between keys).
-(defn key-inter-row-margin [column row] 2.0)
+(defn key-inter-row-margin [column row] 4.0)
 
 ;; Margin between two columns (horizontal space between keys).
 (defn key-inter-column-margin [column row] 2.0)
@@ -214,10 +214,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; GENERAL UTILITY FUNCTIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn deg2rad [degrees]
-	(* (/ degrees 180) pi)
-)
-
 (defn rotate-around-x [angle position]
 	(mmul
 		[
@@ -470,8 +466,16 @@
                         (color [240/255 223/255 175/255 1])))})
 
 ;; Fill the keyholes instead of placing a a keycap over them
-(def keyhole-fill (->> (cube key-sockets-inner-height key-sockets-inner-width key-sockets-thickness)
-                       (translate [0 0 (/ key-sockets-thickness 2)])))
+(def keyhole-fill
+	(->>
+		(cube
+			key-sockets-inner-height
+			key-sockets-inner-width
+			key-sockets-thickness
+		)
+		(translate [0 0 (/ key-sockets-thickness 2)])
+	)
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Placement Functions ;;
@@ -493,59 +497,6 @@
 		:s1u key-sockets-1u-outer-width
 	)
 )
-
-;; FIXME: That's too complicated to go without comment.
-;; If I understand it correctly, this is computing the horizontal position of a
-;; key.
-(defn key-row-radius [column row]
-	(+
-		(/
-			(/
-				(+
-					(key-outer-height column row)
-					key-inter-row-margin
-				)
-				2
-			)
-			(Math/sin (/ (key-column-curvature column row) 2))
-		)
-		cap-top-height
-	)
-)
-;; FIXME: That's too complicated to go without comment.
-;; If I understand it correctly, this is computing the vertical position of a
-;; key.
-(defn key-column-radius [column row]
-	(+
-		(/
-			(/
-				(+
-					(key-outer-width column row)
-					key-inter-column-margin
-				)
-				2
-			)
-			(Math/sin (/ (key-row-curvature column row) 2))
-		)
-		cap-top-height
-	)
-)
-
-;; FIXME: I don't really know what that's supposed to be.
-;; FIXME: That's too complicated to go without comment.
-;; It does not even seem to be used...
-(defn column-x-delta [column row]
-	(+
-		-1
-		(-
-			(*
-				(key-column-radius column row)
-				(Math/sin (key-row-curvature column row))
-			)
-		)
-	)
-)
-
 
 (defn key-apply-geometry
 	[
@@ -617,7 +568,13 @@
 									(*
 										(+
 											(/ (key-outer-width column-step row) 2)
-											(/ (key-outer-width (+ column-step column-range-step) row) 2)
+											(/
+												(key-outer-width
+													(+ column-step column-range-step)
+													row
+												)
+												2
+											)
 											(key-inter-column-margin column-step row)
 										)
 										column-range-step
@@ -874,8 +831,6 @@
 	)
 )
 
-;; FIXME: Name of this vs key-socket-bottom-right-corner not clear enough
-;; TODO: these should check for key size to know which variant to use.
 (defn key-socket-bottom-right-corner-relative-dot [column row]
 	(case (key-type column row)
 		:s1-5u-horizontal
@@ -1244,8 +1199,9 @@
 									-2
 								)
 							)
-							(/ (key-outer-height columns-last-index 0) 2)
-							0
+							(/ (key-outer-width columns-last-index 0) 2)
+							;; Guessing...
+							(+ wall-xy-offset key-sockets-thickness)
 						]
 						(thumb-cluster-key-apply-base-geometry
 							translate-fn
@@ -1589,6 +1545,7 @@
 (defn key-get-bezel-position [column row direction]
 	(let
 		[
+			;; 0.5 because of centering. It reaches edges.
 			[key-x-factor key-y-factor] (direction-to-vector direction 0.5)
 			[bezel-x-factor bezel-y-factor] (direction-to-vector direction 1)
 		]
@@ -1598,7 +1555,6 @@
 				column
 				row
 				[
-					;; 0.5 because of centering. It reaches edges.
 					(*
 						key-x-factor
 						(case (key-type column row)
@@ -1641,6 +1597,7 @@
 	)
 )
 
+;; FIXME: this is actually the end of the lip.
 (defn case-upper-lip-middle-offset [direction]
 	(let
 		[
@@ -1870,7 +1827,10 @@
 					columns-last-index
 					y
 					:east
-					(key-socket-bottom-right-corner-relative-dot columns-last-index y)
+					(key-socket-bottom-right-corner-relative-dot
+						columns-last-index
+						y
+					)
 				)
 			)
 		)
@@ -1898,7 +1858,10 @@
 					columns-last-index
 					(dec y)
 					:east
-					(key-socket-bottom-right-corner-relative-dot columns-last-index (dec y))
+					(key-socket-bottom-right-corner-relative-dot
+						columns-last-index
+						(dec y)
+					)
 				)
 			)
 		)
@@ -2150,11 +2113,44 @@
     6 -5.07))
 
 ; Cutout for MCU holder
-(def usb-holder-ref (key-get-position 0 0 (map - (case-upper-lip-middle-offset :north) [0 (/ key-sockets-1u-outer-height 2) 0])))
-(def usb-holder-position (map + [(+ 18.8 holder-offset) 18.7 1.3] [(first usb-holder-ref) (second usb-holder-ref) 1.8]))
-(def usb-holder-space  (translate (map + usb-holder-position [-1.5 (* -1 wall-thickness) 2.1]) (cube 28.666 30 10.4)))
-(def usb-holder-notch-l  (translate (map + usb-holder-position [-12 (+ 4.4 notch-offset) 2.1]) (cube 10 1.3 10.4)))
-(def usb-holder-notch-r  (translate (map + usb-holder-position [9 (+ (if true 4.4 6.4) notch-offset) 2.1]) (cube 10 1.3 10.4)))
+(def usb-holder-ref
+	(key-get-position
+		0
+		0
+		(map -
+			(case-upper-lip-middle-offset :north)
+			[0 (/ key-sockets-1u-outer-height 2) 0]
+		)
+	)
+)
+
+(def usb-holder-position
+	(map +
+		[(+ 18.8 holder-offset) 18.7 1.3]
+		[(first usb-holder-ref) (second usb-holder-ref) 1.8]
+	)
+)
+
+(def usb-holder-space
+	(translate
+		(map + usb-holder-position [-1.5 (* -1 wall-thickness) 2.1])
+		(cube 28.666 30 10.4)
+	)
+)
+
+(def usb-holder-notch-l
+	(translate
+		(map + usb-holder-position [-12 (+ 4.4 notch-offset) 2.1])
+		(cube 10 1.3 10.4)
+	)
+)
+
+(def usb-holder-notch-r
+	(translate
+		(map + usb-holder-position [9 (+ (if true 4.4 6.4) notch-offset) 2.1])
+		(cube 10 1.3 10.4)
+	)
+)
 
 (def model-right
 	(difference

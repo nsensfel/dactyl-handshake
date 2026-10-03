@@ -1598,7 +1598,7 @@
 )
 
 ;; FIXME: this is actually the end of the lip.
-(defn case-upper-lip-middle-offset [direction]
+(defn case-upper-lip-outer-offset [direction]
 	(let
 		[
 			[x y] (direction-to-vector direction wall-xy-offset)
@@ -1607,7 +1607,7 @@
 	)
 )
 
-(defn case-upper-lip-outer-offset [direction]
+(defn case-upper-lip-middle-offset [direction]
 	(let
 		[
 			[x y] (direction-to-vector direction (+ wall-xy-offset wall-thickness))
@@ -1635,13 +1635,13 @@
 		)
 		(place-function-1
 			(translate
-				(case-upper-lip-middle-offset direction-1)
+				(case-upper-lip-outer-offset direction-1)
 				corner-location-1
 			)
 		)
 		(place-function-1
 			(translate
-				(case-upper-lip-outer-offset direction-1)
+				(case-upper-lip-middle-offset direction-1)
 				corner-location-1
 			)
 		)
@@ -1654,16 +1654,59 @@
 		)
 		(place-function-2
 			(translate
-				(case-upper-lip-middle-offset direction-2)
+				(case-upper-lip-outer-offset direction-2)
 				corner-location-2
 			)
 		)
 		(place-function-2
 			(translate
-				(case-upper-lip-outer-offset direction-2)
+				(case-upper-lip-middle-offset direction-2)
 				corner-location-2
 			)
 		)
+	)
+)
+
+(defn case-enclosed-lip-shapes
+	[
+		place-function-1
+		direction-1
+		corner-location-1
+		place-function-2
+		direction-2
+		corner-location-2
+	]
+	(case-upper-lip-shapes
+		(fn [shape]
+			(place-function-1
+				(translate
+					(let
+						[
+							[x y z] (case-upper-lip-outer-offset direction-1)
+						]
+						[0 0 (* z 2)]
+					)
+					(mirror [0 0 -1] shape)
+				)
+			)
+		)
+		direction-1
+		corner-location-1
+		(fn [shape]
+			(place-function-2
+				(translate
+					(let
+						[
+							[x y z] (case-upper-lip-outer-offset direction-2)
+						]
+						[0 0 (* z 2)]
+					)
+					(mirror [0 0 -1] shape)
+				)
+			)
+		)
+		direction-2
+		corner-location-2
 	)
 )
 
@@ -1688,25 +1731,25 @@
 		(hull-to-ground
 			(place-function-1
 				(translate
-					(case-upper-lip-middle-offset direction-1)
+					(case-upper-lip-outer-offset direction-1)
 					corner-location-1
 				)
 			)
 			(place-function-1
 				(translate
-					(case-upper-lip-outer-offset direction-1)
+					(case-upper-lip-middle-offset direction-1)
 					corner-location-1
 				)
 			)
 			(place-function-2
 				(translate
-					(case-upper-lip-middle-offset direction-2)
+					(case-upper-lip-outer-offset direction-2)
 					corner-location-2
 				)
 			)
 			(place-function-2
 				(translate
-					(case-upper-lip-outer-offset direction-2)
+					(case-upper-lip-middle-offset direction-2)
 					corner-location-2
 				)
 			)
@@ -2036,6 +2079,15 @@
 			;; TODO: Account for (get-key-status ...)
 			(union
 				;; lip on "left" side
+				(case-enclosed-lip-shapes
+					(partial shape-place-at-thumb-cluster-key 0 y)
+					:west
+					(thumb-cluster-key-socket-top-left-corner-relative-dot 0 y)
+
+					(partial shape-place-at-thumb-cluster-key 0 y)
+					:west
+					(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
+				)
 				(case-upper-lip-shapes
 					(partial shape-place-at-thumb-cluster-key 0 y)
 					:west
@@ -2046,17 +2098,31 @@
 					(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
 				)
 				(when (not (= (thumb-cluster-key-status 0 (dec y)) :void))
-					(case-upper-lip-shapes
-						(partial shape-place-at-thumb-cluster-key 0 (dec y))
-						:west
-						(thumb-cluster-key-socket-top-left-corner-relative-dot
-							0
-							(dec y)
-						)
+					(union
+						(case-upper-lip-shapes
+							(partial shape-place-at-thumb-cluster-key 0 (dec y))
+							:west
+							(thumb-cluster-key-socket-top-left-corner-relative-dot
+								0
+								(dec y)
+							)
 
-						(partial shape-place-at-thumb-cluster-key 0 y)
-						:west
-						(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
+							(partial shape-place-at-thumb-cluster-key 0 y)
+							:west
+							(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
+						)
+						(case-enclosed-lip-shapes
+							(partial shape-place-at-thumb-cluster-key 0 (dec y))
+							:west
+							(thumb-cluster-key-socket-top-left-corner-relative-dot
+								0
+								(dec y)
+							)
+
+							(partial shape-place-at-thumb-cluster-key 0 y)
+							:west
+							(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
+						)
 					)
 				)
 			)
@@ -2070,7 +2136,39 @@
 			:south
 			(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 0)
 		)
+		(case-enclosed-lip-shapes
+			(partial shape-place-at-thumb-cluster-key 0 0)
+			:west
+			(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 0)
+
+			(partial shape-place-at-thumb-cluster-key 0 0)
+			:south
+			(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 0)
+		)
 		(case-upper-lip-shapes
+			(partial
+				shape-place-at-thumb-cluster-key
+				0
+				thumb-cluster-rows-last-index
+			)
+			:west
+			(thumb-cluster-key-socket-top-left-corner-relative-dot
+				0
+				thumb-cluster-rows-last-index
+			)
+
+			(partial
+				shape-place-at-thumb-cluster-key
+				0
+				thumb-cluster-rows-last-index
+			)
+			:north
+			(thumb-cluster-key-socket-top-left-corner-relative-dot
+				0
+				thumb-cluster-rows-last-index
+			)
+		)
+		(case-enclosed-lip-shapes
 			(partial
 				shape-place-at-thumb-cluster-key
 				0
@@ -2118,7 +2216,7 @@
 		0
 		0
 		(map -
-			(case-upper-lip-middle-offset :north)
+			(case-upper-lip-outer-offset :north)
 			[0 (/ key-sockets-1u-outer-height 2) 0]
 		)
 	)

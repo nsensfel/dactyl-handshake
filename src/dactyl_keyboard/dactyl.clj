@@ -1475,85 +1475,6 @@
 	)
 )
 
-(def thumb-cluster-to-keyboard-connecting-shape
-	(apply
-		union
-		(concat
-			;; Have the inter column pads extend to the empty cells' rows:
-			(for
-				[
-					row rows-index-list
-					:when (not (key-is-not-void? columns-last-index row))
-				]
-				(hull-triangle-mesh
-					(key-socket-top-right-corner-absolute-dot
-						(dec columns-last-index)
-						row
-					)
-					(key-socket-top-left-corner-absolute-dot
-						columns-last-index
-						row
-					)
-					(key-socket-bottom-right-corner-absolute-dot
-						(dec columns-last-index)
-						row
-					)
-					(key-socket-bottom-left-corner-absolute-dot
-						columns-last-index
-						row
-					)
-				)
-			)
-			;; Have the inter row pads extend to the empty cells column.
-			[
-				(hull-triangle-mesh
-					(key-socket-top-left-corner-absolute-dot
-						columns-last-index
-						2
-					)
-					(key-socket-top-right-corner-absolute-dot
-						columns-last-index
-						2
-					)
-					(key-socket-bottom-left-corner-absolute-dot
-						columns-last-index
-						3
-					)
-					(key-socket-bottom-right-corner-absolute-dot
-						columns-last-index
-						3
-					)
-				)
-			]
-			;; Diagonal interconnections (little bit not covered by horizontal and
-			;; vertical connections).
-			(for
-				[
-					row rows-index-list
-					:when (not (key-is-not-void? columns-last-index row))
-				]
-				(hull-triangle-mesh
-					(key-socket-bottom-right-corner-absolute-dot
-						(dec columns-last-index)
-						(inc row)
-					)
-					(key-socket-bottom-left-corner-absolute-dot
-						columns-last-index
-						(inc row)
-					)
-					(key-socket-top-right-corner-absolute-dot
-						(dec columns-last-index)
-						row
-					)
-					(key-socket-top-left-corner-absolute-dot
-						columns-last-index
-						row
-					)
-				)
-			)
-		)
-	)
-)
 
 (def larger-plate
 	(let
@@ -1708,18 +1629,19 @@
 		direction-2
 		corner-location-2
 	]
-	(hull
+	(hull-triangle-mesh
 		(place-function-1 corner-location-1)
+		(place-function-2 corner-location-2)
 		(place-function-1
 			(translate
 				(case-upper-lip-inner-offset direction-1)
 				corner-location-1
 			)
 		)
-		(place-function-1
+		(place-function-2
 			(translate
-				(case-upper-lip-outer-offset direction-1)
-				corner-location-1
+				(case-upper-lip-inner-offset direction-2)
+				corner-location-2
 			)
 		)
 		(place-function-1
@@ -1728,22 +1650,21 @@
 				corner-location-1
 			)
 		)
-		(place-function-2 corner-location-2)
 		(place-function-2
 			(translate
-				(case-upper-lip-inner-offset direction-2)
+				(case-upper-lip-middle-offset direction-2)
 				corner-location-2
+			)
+		)
+		(place-function-1
+			(translate
+				(case-upper-lip-outer-offset direction-1)
+				corner-location-1
 			)
 		)
 		(place-function-2
 			(translate
 				(case-upper-lip-outer-offset direction-2)
-				corner-location-2
-			)
-		)
-		(place-function-2
-			(translate
-				(case-upper-lip-middle-offset direction-2)
 				corner-location-2
 			)
 		)
@@ -1759,18 +1680,19 @@
 		direction-2
 		corner-location-2
 	]
-	(hull
+	(hull-triangle-mesh
 		(place-function-1 corner-location-1)
+		(place-function-2 corner-location-2)
 		(place-function-1
 			(translate
 				(case-lip-invert-z (case-upper-lip-inner-offset direction-1))
 				corner-location-1
 			)
 		)
-		(place-function-1
+		(place-function-2
 			(translate
-				(case-lip-invert-z (case-upper-lip-outer-offset direction-1))
-				corner-location-1
+				(case-lip-invert-z (case-upper-lip-inner-offset direction-2))
+				corner-location-2
 			)
 		)
 		(place-function-1
@@ -1779,22 +1701,21 @@
 				corner-location-1
 			)
 		)
-		(place-function-2 corner-location-2)
 		(place-function-2
 			(translate
-				(case-lip-invert-z (case-upper-lip-inner-offset direction-2))
+				(case-lip-invert-z (case-upper-lip-middle-offset direction-2))
 				corner-location-2
+			)
+		)
+		(place-function-1
+			(translate
+				(case-lip-invert-z (case-upper-lip-outer-offset direction-1))
+				corner-location-1
 			)
 		)
 		(place-function-2
 			(translate
 				(case-lip-invert-z (case-upper-lip-outer-offset direction-2))
-				corner-location-2
-			)
-		)
-		(place-function-2
-			(translate
-				(case-lip-invert-z (case-upper-lip-middle-offset direction-2))
 				corner-location-2
 			)
 		)
@@ -2333,7 +2254,81 @@
 	)
 )
 
-(def thumb-cluster-link-to-keyboard
+(def thumb-cluster-to-keyboard-connecting-shape
+	(apply
+		union
+		(concat
+			;; Have the inter column pads extend to the empty cells' rows:
+			(for
+				[
+					row rows-index-list
+					:when (not (key-is-not-void? columns-last-index row))
+				]
+				(case-lower-lip-shapes
+					(partial shape-place-at-key (dec columns-last-index) row)
+					:east
+					(thumb-cluster-key-socket-top-right-corner-relative-dot
+						(dec thumb-cluster-columns-last-index)
+						row
+					)
+
+					(partial shape-place-at-key (dec columns-last-index) row)
+					:east
+					(thumb-cluster-key-socket-bottom-right-corner-relative-dot
+						(dec thumb-cluster-columns-last-index)
+						row
+					)
+				)
+			)
+			;; Have the inter row pads extend to the empty cells column.
+			[
+				(hull-triangle-mesh
+					(key-socket-top-left-corner-absolute-dot
+						columns-last-index
+						2
+					)
+					(key-socket-top-right-corner-absolute-dot
+						columns-last-index
+						2
+					)
+					(key-socket-bottom-left-corner-absolute-dot
+						columns-last-index
+						3
+					)
+					(key-socket-bottom-right-corner-absolute-dot
+						columns-last-index
+						3
+					)
+				)
+			]
+			;; Diagonal interconnections (little bit not covered by horizontal and
+			;; vertical connections).
+			(for
+				[
+					row rows-index-list
+					:when (not (key-is-not-void? columns-last-index row))
+				]
+				(hull-triangle-mesh
+					(key-socket-bottom-right-corner-absolute-dot
+						(dec columns-last-index)
+						(inc row)
+					)
+					(key-socket-bottom-left-corner-absolute-dot
+						columns-last-index
+						(inc row)
+					)
+					(key-socket-top-right-corner-absolute-dot
+						(dec columns-last-index)
+						row
+					)
+					(key-socket-top-left-corner-absolute-dot
+						columns-last-index
+						row
+					)
+				)
+			)
+		)
+	)
 )
 
 ; Offsets for the controller/trrs holder cutout

@@ -1475,6 +1475,86 @@
 	)
 )
 
+(def thumb-cluster-to-keyboard-connecting-shape
+	(apply
+		union
+		(concat
+			;; Have the inter column pads extend to the empty cells' rows:
+			(for
+				[
+					row rows-index-list
+					:when (not (key-is-not-void? columns-last-index row))
+				]
+				(hull-triangle-mesh
+					(key-socket-top-right-corner-absolute-dot
+						(dec columns-last-index)
+						row
+					)
+					(key-socket-top-left-corner-absolute-dot
+						columns-last-index
+						row
+					)
+					(key-socket-bottom-right-corner-absolute-dot
+						(dec columns-last-index)
+						row
+					)
+					(key-socket-bottom-left-corner-absolute-dot
+						columns-last-index
+						row
+					)
+				)
+			)
+			;; Have the inter row pads extend to the empty cells column.
+			[
+				(hull-triangle-mesh
+					(key-socket-top-left-corner-absolute-dot
+						columns-last-index
+						2
+					)
+					(key-socket-top-right-corner-absolute-dot
+						columns-last-index
+						2
+					)
+					(key-socket-bottom-left-corner-absolute-dot
+						columns-last-index
+						3
+					)
+					(key-socket-bottom-right-corner-absolute-dot
+						columns-last-index
+						3
+					)
+				)
+			]
+			;; Diagonal interconnections (little bit not covered by horizontal and
+			;; vertical connections).
+			(for
+				[
+					row rows-index-list
+					:when (not (key-is-not-void? columns-last-index row))
+				]
+				(hull-triangle-mesh
+					(key-socket-bottom-right-corner-absolute-dot
+						(dec columns-last-index)
+						(inc row)
+					)
+					(key-socket-bottom-left-corner-absolute-dot
+						columns-last-index
+						(inc row)
+					)
+					(key-socket-top-right-corner-absolute-dot
+						(dec columns-last-index)
+						row
+					)
+					(key-socket-top-left-corner-absolute-dot
+						columns-last-index
+						row
+					)
+				)
+			)
+		)
+	)
+)
+
 (def larger-plate
 	(let
 		[
@@ -1597,7 +1677,6 @@
 	)
 )
 
-;; FIXME: this is actually the end of the lip.
 (defn case-upper-lip-outer-offset [direction]
 	(let
 		[
@@ -1614,6 +1693,10 @@
 		]
 		[x y wall-z-offset]
 	)
+)
+
+(defn case-lip-invert-z [location]
+	(let [[x y z] location] [x y (- z)])
 )
 
 (defn case-upper-lip-shapes
@@ -1667,6 +1750,57 @@
 	)
 )
 
+(defn case-lower-lip-shapes
+	[
+		place-function-1
+		direction-1
+		corner-location-1
+		place-function-2
+		direction-2
+		corner-location-2
+	]
+	(hull
+		(place-function-1 corner-location-1)
+		(place-function-1
+			(translate
+				(case-lip-invert-z (case-upper-lip-inner-offset direction-1))
+				corner-location-1
+			)
+		)
+		(place-function-1
+			(translate
+				(case-lip-invert-z (case-upper-lip-outer-offset direction-1))
+				corner-location-1
+			)
+		)
+		(place-function-1
+			(translate
+				(case-lip-invert-z (case-upper-lip-middle-offset direction-1))
+				corner-location-1
+			)
+		)
+		(place-function-2 corner-location-2)
+		(place-function-2
+			(translate
+				(case-lip-invert-z (case-upper-lip-inner-offset direction-2))
+				corner-location-2
+			)
+		)
+		(place-function-2
+			(translate
+				(case-lip-invert-z (case-upper-lip-outer-offset direction-2))
+				corner-location-2
+			)
+		)
+		(place-function-2
+			(translate
+				(case-lip-invert-z (case-upper-lip-middle-offset direction-2))
+				corner-location-2
+			)
+		)
+	)
+)
+
 (defn case-enclosed-lip-shapes
 	[
 		place-function-1
@@ -1707,6 +1841,35 @@
 		)
 		direction-2
 		corner-location-2
+	)
+)
+
+(defn case-upper-and-enclosed-lip-shapes
+	[
+		place-function-1
+		direction-1
+		corner-location-1
+		place-function-2
+		direction-2
+		corner-location-2
+	]
+	(union
+		(case-upper-lip-shapes
+			place-function-1
+			direction-1
+			corner-location-1
+			place-function-2
+			direction-2
+			corner-location-2
+		)
+		(case-enclosed-lip-shapes
+			place-function-1
+			direction-1
+			corner-location-1
+			place-function-2
+			direction-2
+			corner-location-2
+		)
 	)
 )
 
@@ -1757,7 +1920,6 @@
 	)
 )
 
-;; TODO: rename this.
 (defn wall-and-case-upper-lip-shapes-between-keys
 	[
 		column-1
@@ -1885,23 +2047,23 @@
 					0
 					y
 					:west
-					(key-socket-top-left-corner-relative-dot 0 y)
+					(key-socket-bottom-left-corner-relative-dot 0 y)
 
 					0
 					(dec y)
 					:west
-					(key-socket-bottom-left-corner-relative-dot 0 (dec y))
+					(key-socket-top-left-corner-relative-dot 0 (dec y))
 				)
 				(wall-and-case-upper-lip-shapes-between-keys
 					columns-last-index
 					y
 					:east
-					(key-socket-top-right-corner-relative-dot columns-last-index y)
+					(key-socket-bottom-right-corner-relative-dot columns-last-index y)
 
 					columns-last-index
 					(dec y)
 					:east
-					(key-socket-bottom-right-corner-relative-dot
+					(key-socket-top-right-corner-relative-dot
 						columns-last-index
 						(dec y)
 					)
@@ -1991,7 +2153,7 @@
 			;; TODO: Account for (get-key-status ...)
 			(union
 				;; south lip
-				(case-upper-lip-shapes
+				(case-upper-and-enclosed-lip-shapes
 					(partial shape-place-at-thumb-cluster-key x 0)
 					:south
 					(thumb-cluster-key-socket-bottom-left-corner-relative-dot x 0)
@@ -2001,7 +2163,7 @@
 					(thumb-cluster-key-socket-bottom-right-corner-relative-dot x 0)
 				)
 				(when (not (= (thumb-cluster-key-status (dec x) 0) :void))
-					(case-upper-lip-shapes
+					(case-upper-and-enclosed-lip-shapes
 						(partial shape-place-at-thumb-cluster-key (dec x) 0)
 						:south
 						(thumb-cluster-key-socket-bottom-right-corner-relative-dot
@@ -2015,7 +2177,7 @@
 					)
 				)
 				;; north lip
-				(case-upper-lip-shapes
+				(case-upper-and-enclosed-lip-shapes
 					(partial
 						shape-place-at-thumb-cluster-key
 						x
@@ -2048,7 +2210,7 @@
 							:void
 						)
 					)
-					(case-upper-lip-shapes
+					(case-upper-and-enclosed-lip-shapes
 						(partial
 							shape-place-at-thumb-cluster-key
 							(dec x)
@@ -2079,16 +2241,7 @@
 			;; TODO: Account for (get-key-status ...)
 			(union
 				;; lip on "left" side
-				(case-enclosed-lip-shapes
-					(partial shape-place-at-thumb-cluster-key 0 y)
-					:west
-					(thumb-cluster-key-socket-top-left-corner-relative-dot 0 y)
-
-					(partial shape-place-at-thumb-cluster-key 0 y)
-					:west
-					(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
-				)
-				(case-upper-lip-shapes
+				(case-upper-and-enclosed-lip-shapes
 					(partial shape-place-at-thumb-cluster-key 0 y)
 					:west
 					(thumb-cluster-key-socket-top-left-corner-relative-dot 0 y)
@@ -2098,31 +2251,17 @@
 					(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
 				)
 				(when (not (= (thumb-cluster-key-status 0 (dec y)) :void))
-					(union
-						(case-upper-lip-shapes
-							(partial shape-place-at-thumb-cluster-key 0 (dec y))
-							:west
-							(thumb-cluster-key-socket-top-left-corner-relative-dot
-								0
-								(dec y)
-							)
-
-							(partial shape-place-at-thumb-cluster-key 0 y)
-							:west
-							(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
+					(case-upper-and-enclosed-lip-shapes
+						(partial shape-place-at-thumb-cluster-key 0 (dec y))
+						:west
+						(thumb-cluster-key-socket-top-left-corner-relative-dot
+							0
+							(dec y)
 						)
-						(case-enclosed-lip-shapes
-							(partial shape-place-at-thumb-cluster-key 0 (dec y))
-							:west
-							(thumb-cluster-key-socket-top-left-corner-relative-dot
-								0
-								(dec y)
-							)
 
-							(partial shape-place-at-thumb-cluster-key 0 y)
-							:west
-							(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
-						)
+						(partial shape-place-at-thumb-cluster-key 0 y)
+						:west
+						(thumb-cluster-key-socket-bottom-left-corner-relative-dot 0 y)
 					)
 				)
 			)
@@ -2258,6 +2397,7 @@
 			thumb-cluster-key-sockets-all-shapes
 			thumb-cluster-key-sockets-interconnecting-mesh-shape
 			thumb-cluster-case-walls
+			thumb-cluster-to-keyboard-connecting-shape
 			(difference
 				case-walls
 				usb-holder-space

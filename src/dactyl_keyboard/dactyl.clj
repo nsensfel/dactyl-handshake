@@ -703,11 +703,116 @@
 	)
 )
 
+(def key-socket-almost-corner-offset 4)
+
+(defn key-sockets-top-almost-right-corner-relative-dot [height width]
+	(translate
+		[
+			(-
+				(/ width 2)
+				location-dot-half-size
+				key-socket-almost-corner-offset
+			)
+			(- (/ height 2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-right-almost-top-corner-relative-dot [height width]
+	(translate
+		[
+			(- (/ width 2) location-dot-half-size)
+			(-
+				(/ height 2)
+				location-dot-half-size
+				key-socket-almost-corner-offset
+			)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-top-middle-relative-dot [height width]
+	(translate
+		[
+			(- location-dot-half-size)
+			(- (/ height 2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-bottom-middle-relative-dot [height width]
+	(translate
+		[
+			(- location-dot-half-size)
+			(- (/ height -2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-right-middle-relative-dot [height width]
+	(translate
+		[
+			(- (/ width 2) location-dot-half-size)
+			(- location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-left-middle-relative-dot [height width]
+	(translate
+		[
+			(+ (/ width 2) location-dot-half-size)
+			(- location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
 (defn key-sockets-top-right-corner-relative-dot [height width]
 	(translate
 		[
 			(- (/ width 2) location-dot-half-size)
 			(- (/ height 2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-top-almost-left-corner-relative-dot [height width]
+	(translate
+		[
+			(+
+				(/ width -2)
+				location-dot-half-size
+				key-socket-almost-corner-offset
+			)
+			(- (/ height 2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-left-almost-top-corner-relative-dot [height width]
+	(translate
+		[
+			(+ (/ width -2) location-dot-half-size)
+			(+
+				(- (/ height 2) location-dot-half-size)
+				key-socket-almost-corner-offset
+			)
 			0
 		]
 		key-socket-location-dot
@@ -725,11 +830,71 @@
 	)
 )
 
+(defn key-sockets-bottom-almost-left-corner-relative-dot [height width]
+	(translate
+		[
+			(+
+				(/ width -2)
+				location-dot-half-size
+				key-socket-almost-corner-offset
+			)
+			(+ (/ height -2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-left-almost-bottom-corner-relative-dot [height width]
+	(translate
+		[
+			(+ (/ width -2) location-dot-half-size)
+			(+
+				(/ height -2)
+				location-dot-half-size
+				key-socket-almost-corner-offset
+			)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
 (defn key-sockets-bottom-left-corner-relative-dot [height width]
 	(translate
 		[
 			(+ (/ width -2) location-dot-half-size)
 			(+ (/ height -2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-bottom-almost-right-corner-relative-dot [height width]
+	(translate
+		[
+			(-
+				(/ width 2)
+				location-dot-half-size
+				key-socket-almost-corner-offset
+			)
+			(+ (/ height -2) location-dot-half-size)
+			0
+		]
+		key-socket-location-dot
+	)
+)
+
+(defn key-sockets-right-almost-bottom-corner-relative-dot [height width]
+	(translate
+		[
+			(- (/ width 2) location-dot-half-size)
+			(+
+				(/ height -2)
+				location-dot-half-size
+				key-socket-almost-corner-offset
+			)
 			0
 		]
 		key-socket-location-dot
@@ -747,8 +912,64 @@
 	)
 )
 
+(def key-1u-socket-top-middle-relative-dot
+	(key-sockets-top-middle-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-bottom-middle-relative-dot
+	(key-sockets-bottom-middle-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-right-middle-relative-dot
+	(key-sockets-right-middle-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-left-middle-relative-dot
+	(key-sockets-left-middle-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-top-almost-right-corner-relative-dot
+	(key-sockets-top-almost-right-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-right-almost-top-corner-relative-dot
+	(key-sockets-right-almost-top-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
 (def key-1u-socket-top-right-corner-relative-dot
 	(key-sockets-top-right-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-top-almost-left-corner-relative-dot
+	(key-sockets-top-almost-left-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-left-almost-top-corner-relative-dot
+	(key-sockets-left-almost-top-corner-relative-dot
 		key-sockets-1u-outer-height
 		key-sockets-1u-outer-width
 	)
@@ -761,8 +982,36 @@
 	)
 )
 
+(def key-1u-socket-bottom-almost-left-corner-relative-dot
+	(key-sockets-bottom-almost-left-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-left-almost-bottom-corner-relative-dot
+	(key-sockets-left-almost-bottom-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
 (def key-1u-socket-bottom-left-corner-relative-dot
 	(key-sockets-bottom-left-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-bottom-almost-right-corner-relative-dot
+	(key-sockets-bottom-almost-right-corner-relative-dot
+		key-sockets-1u-outer-height
+		key-sockets-1u-outer-width
+	)
+)
+
+(def key-1u-socket-right-almost-bottom-corner-relative-dot
+	(key-sockets-right-almost-bottom-corner-relative-dot
 		key-sockets-1u-outer-height
 		key-sockets-1u-outer-width
 	)
@@ -775,8 +1024,64 @@
 	)
 )
 
+(def key-1-5u-horizontal-socket-top-middle-relative-dot
+	(key-sockets-top-middle-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-bottom-middle-relative-dot
+	(key-sockets-bottom-middle-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-right-middle-relative-dot
+	(key-sockets-right-middle-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-left-middle-relative-dot
+	(key-sockets-left-middle-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-top-almost-right-corner-relative-dot
+	(key-sockets-top-almost-right-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-right-almost-top-corner-relative-dot
+	(key-sockets-right-almost-top-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
 (def key-1-5u-horizontal-socket-top-right-corner-relative-dot
 	(key-sockets-top-right-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-top-almost-left-corner-relative-dot
+	(key-sockets-top-almost-left-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-left-almost-top-corner-relative-dot
+	(key-sockets-left-almost-top-corner-relative-dot
 		key-sockets-1-5u-horizontal-outer-height
 		key-sockets-1-5u-horizontal-outer-width
 	)
@@ -789,8 +1094,36 @@
 	)
 )
 
+(def key-1-5u-horizontal-socket-bottom-almost-left-corner-relative-dot
+	(key-sockets-bottom-almost-left-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-left-almost-bottom-corner-relative-dot
+	(key-sockets-left-almost-bottom-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
 (def key-1-5u-horizontal-socket-bottom-left-corner-relative-dot
 	(key-sockets-bottom-left-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-bottom-almost-right-corner-relative-dot
+	(key-sockets-bottom-almost-right-corner-relative-dot
+		key-sockets-1-5u-horizontal-outer-height
+		key-sockets-1-5u-horizontal-outer-width
+	)
+)
+
+(def key-1-5u-horizontal-socket-right-almost-bottom-corner-relative-dot
+	(key-sockets-right-almost-bottom-corner-relative-dot
 		key-sockets-1-5u-horizontal-outer-height
 		key-sockets-1-5u-horizontal-outer-width
 	)
@@ -803,8 +1136,64 @@
 	)
 )
 
+(def key-1-5u-vertical-socket-top-middle-relative-dot
+	(key-sockets-top-middle-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-bottom-middle-relative-dot
+	(key-sockets-bottom-middle-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-right-middle-relative-dot
+	(key-sockets-right-middle-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-left-middle-relative-dot
+	(key-sockets-left-middle-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-top-almost-right-corner-relative-dot
+	(key-sockets-top-almost-right-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-right-almost-top-corner-relative-dot
+	(key-sockets-right-almost-top-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
 (def key-1-5u-vertical-socket-top-right-corner-relative-dot
 	(key-sockets-top-right-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-top-almost-left-corner-relative-dot
+	(key-sockets-top-almost-left-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-left-almost-top-corner-relative-dot
+	(key-sockets-left-almost-top-corner-relative-dot
 		key-sockets-1-5u-vertical-outer-height
 		key-sockets-1-5u-vertical-outer-width
 	)
@@ -817,8 +1206,36 @@
 	)
 )
 
+(def key-1-5u-vertical-socket-bottom-almost-left-corner-relative-dot
+	(key-sockets-bottom-almost-left-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-left-almost-bottom-corner-relative-dot
+	(key-sockets-left-almost-bottom-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
 (def key-1-5u-vertical-socket-bottom-left-corner-relative-dot
 	(key-sockets-bottom-left-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-bottom-almost-right-corner-relative-dot
+	(key-sockets-bottom-almost-right-corner-relative-dot
+		key-sockets-1-5u-vertical-outer-height
+		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(def key-1-5u-vertical-socket-right-almost-bottom-corner-relative-dot
+	(key-sockets-right-almost-bottom-corner-relative-dot
 		key-sockets-1-5u-vertical-outer-height
 		key-sockets-1-5u-vertical-outer-width
 	)
@@ -828,6 +1245,78 @@
 	(key-sockets-bottom-right-corner-relative-dot
 		key-sockets-1-5u-vertical-outer-height
 		key-sockets-1-5u-vertical-outer-width
+	)
+)
+
+(defn key-socket-bottom-middle-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-bottom-middle-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-bottom-middle-relative-dot
+
+		:s1u key-1u-socket-bottom-middle-relative-dot
+	)
+)
+
+(defn key-socket-top-middle-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-top-middle-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-top-middle-relative-dot
+
+		:s1u key-1u-socket-top-middle-relative-dot
+	)
+)
+
+(defn key-socket-left-middle-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-left-middle-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-left-middle-relative-dot
+
+		:s1u key-1u-socket-left-middle-relative-dot
+	)
+)
+
+(defn key-socket-right-middle-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-right-middle-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-right-middle-relative-dot
+
+		:s1u key-1u-socket-right-middle-relative-dot
+	)
+)
+
+(defn key-socket-bottom-almost-right-corner-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-bottom-almost-right-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-bottom-almost-right-corner-relative-dot
+
+		:s1u key-1u-socket-bottom-almost-right-corner-relative-dot
+	)
+)
+
+(defn key-socket-right-almost-bottom-corner-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-right-almost-bottom-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-right-almost-bottom-corner-relative-dot
+
+		:s1u key-1u-socket-right-almost-bottom-corner-relative-dot
 	)
 )
 
@@ -843,11 +1332,99 @@
 	)
 )
 
+(defn key-socket-bottom-middle-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-bottom-middle-relative-dot column row)
+	)
+)
+
+(defn key-socket-top-middle-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-top-middle-relative-dot column row)
+	)
+)
+
+(defn key-socket-left-middle-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-left-middle-relative-dot column row)
+	)
+)
+
+(defn key-socket-right-middle-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-right-middle-relative-dot column row)
+	)
+)
+
+(defn key-socket-bottom-almost-right-corner-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-bottom-almost-right-corner-relative-dot column row)
+	)
+)
+
+(defn key-socket-right-almost-bottom-corner-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-right-almost-bottom-corner-relative-dot column row)
+	)
+)
+
 (defn key-socket-bottom-right-corner-absolute-dot [column row]
 	(shape-place-at-key
 		column
 		row
 		(key-socket-bottom-right-corner-relative-dot column row)
+	)
+)
+
+(defn key-socket-top-almost-right-corner-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-top-almost-right-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-top-almost-right-corner-relative-dot
+
+		:s1u key-1u-socket-top-almost-right-corner-relative-dot
+	)
+)
+
+(defn key-socket-top-almost-right-corner-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-top-almost-right-corner-relative-dot column row)
+	)
+)
+
+(defn key-socket-right-almost-top-corner-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-right-almost-top-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-right-almost-top-corner-relative-dot
+
+		:s1u key-1u-socket-right-almost-top-corner-relative-dot
+	)
+)
+
+(defn key-socket-right-almost-top-corner-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-right-almost-top-corner-relative-dot column row)
 	)
 )
 
@@ -871,6 +1448,46 @@
 	)
 )
 
+(defn key-socket-bottom-almost-left-corner-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-bottom-almost-left-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-bottom-almost-left-corner-relative-dot
+
+		:s1u key-1u-socket-bottom-almost-left-corner-relative-dot
+	)
+)
+
+(defn key-socket-bottom-almost-left-corner-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-bottom-almost-left-corner-relative-dot column row)
+	)
+)
+
+(defn key-socket-left-almost-bottom-corner-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-left-almost-bottom-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-left-almost-bottom-corner-relative-dot
+
+		:s1u key-1u-socket-left-almost-bottom-corner-relative-dot
+	)
+)
+
+(defn key-socket-left-almost-bottom-corner-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-left-almost-bottom-corner-relative-dot column row)
+	)
+)
+
 (defn key-socket-bottom-left-corner-relative-dot [column row]
 	(case (key-type column row)
 		:s1-5u-horizontal
@@ -888,6 +1505,46 @@
 		column
 		row
 		(key-socket-bottom-left-corner-relative-dot column row)
+	)
+)
+
+(defn key-socket-top-almost-left-corner-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-top-almost-left-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-top-almost-left-corner-relative-dot
+
+		:s1u key-1u-socket-top-almost-left-corner-relative-dot
+	)
+)
+
+(defn key-socket-top-almost-left-corner-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-top-almost-left-corner-relative-dot column row)
+	)
+)
+
+(defn key-socket-left-almost-top-corner-relative-dot [column row]
+	(case (key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-left-almost-top-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-left-almost-top-corner-relative-dot
+
+		:s1u key-1u-socket-left-almost-top-corner-relative-dot
+	)
+)
+
+(defn key-socket-left-almost-top-corner-absolute-dot [column row]
+	(shape-place-at-key
+		column
+		row
+		(key-socket-left-almost-top-corner-relative-dot column row)
 	)
 )
 
@@ -1282,6 +1939,166 @@
 				)
 			)
 		)
+	)
+)
+
+(defn thumb-cluster-key-socket-right-almost-bottom-corner-relative-dot [column row]
+	(case (thumb-cluster-key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-right-almost-bottom-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-right-almost-bottom-corner-relative-dot
+
+		:s1u key-1u-socket-right-almost-bottom-corner-relative-dot
+	)
+)
+
+(defn thumb-cluster-key-socket-right-almost-bottom-corner-absolute-dot [column row]
+	(shape-place-at-thumb-cluster-key
+		column
+		row
+		(thumb-cluster-key-socket-right-almost-bottom-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-right-almost-top-corner-relative-dot [column row]
+	(case (thumb-cluster-key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-right-almost-top-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-right-almost-top-corner-relative-dot
+
+		:s1u key-1u-socket-right-almost-top-corner-relative-dot
+	)
+)
+
+(defn thumb-cluster-key-socket-right-almost-top-corner-absolute-dot [column row]
+	(shape-place-at-thumb-cluster-key
+		column
+		row
+		(thumb-cluster-key-socket-right-almost-top-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-left-almost-bottom-corner-relative-dot [column row]
+	(case (thumb-cluster-key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-left-almost-bottom-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-left-almost-bottom-corner-relative-dot
+
+		:s1u key-1u-socket-left-almost-bottom-corner-relative-dot
+	)
+)
+
+(defn thumb-cluster-key-socket-left-almost-bottom-corner-absolute-dot [column row]
+	(shape-place-at-thumb-cluster-key
+		column
+		row
+		(thumb-cluster-key-socket-left-almost-bottom-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-left-almost-top-corner-relative-dot [column row]
+	(case (thumb-cluster-key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-left-almost-top-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-left-almost-top-corner-relative-dot
+
+		:s1u key-1u-socket-left-almost-top-corner-relative-dot
+	)
+)
+
+(defn thumb-cluster-key-socket-left-almost-top-corner-absolute-dot [column row]
+	(shape-place-at-thumb-cluster-key
+		column
+		row
+		(thumb-cluster-key-socket-left-almost-top-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-bottom-almost-right-corner-relative-dot [column row]
+	(case (thumb-cluster-key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-bottom-almost-right-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-bottom-almost-right-corner-relative-dot
+
+		:s1u key-1u-socket-bottom-almost-right-corner-relative-dot
+	)
+)
+
+(defn thumb-cluster-key-socket-bottom-almost-right-corner-absolute-dot [column row]
+	(shape-place-at-thumb-cluster-key
+		column
+		row
+		(thumb-cluster-key-socket-bottom-almost-right-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-top-almost-right-corner-relative-dot [column row]
+	(case (thumb-cluster-key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-top-almost-right-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-top-almost-right-corner-relative-dot
+
+		:s1u key-1u-socket-top-almost-right-corner-relative-dot
+	)
+)
+
+(defn thumb-cluster-key-socket-top-almost-right-corner-absolute-dot [column row]
+	(shape-place-at-thumb-cluster-key
+		column
+		row
+		(thumb-cluster-key-socket-top-almost-right-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-bottom-almost-left-corner-relative-dot [column row]
+	(case (thumb-cluster-key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-bottom-almost-left-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-bottom-almost-left-corner-relative-dot
+
+		:s1u key-1u-socket-bottom-almost-left-corner-relative-dot
+	)
+)
+
+(defn thumb-cluster-key-socket-bottom-almost-left-corner-absolute-dot [column row]
+	(shape-place-at-thumb-cluster-key
+		column
+		row
+		(thumb-cluster-key-socket-bottom-almost-left-corner-relative-dot column row)
+	)
+)
+
+(defn thumb-cluster-key-socket-top-almost-left-corner-relative-dot [column row]
+	(case (thumb-cluster-key-type column row)
+		:s1-5u-horizontal
+			key-1-5u-horizontal-socket-top-almost-left-corner-relative-dot
+
+		:s1-5u-vertical
+			key-1-5u-vertical-socket-top-almost-left-corner-relative-dot
+
+		:s1u key-1u-socket-top-almost-left-corner-relative-dot
+	)
+)
+
+(defn thumb-cluster-key-socket-top-almost-left-corner-absolute-dot [column row]
+	(shape-place-at-thumb-cluster-key
+		column
+		row
+		(thumb-cluster-key-socket-top-almost-left-corner-relative-dot column row)
 	)
 )
 
@@ -2262,42 +3079,75 @@
 			(for
 				[
 					row rows-index-list
-					:when (not (key-is-not-void? columns-last-index row))
+					:when
+						(and
+							(not (key-is-not-void? columns-last-index row))
+							(not (= row 2))
+						)
 				]
 				(case-lower-lip-shapes
 					(partial shape-place-at-key (dec columns-last-index) row)
 					:east
-					(thumb-cluster-key-socket-top-right-corner-relative-dot
-						(dec thumb-cluster-columns-last-index)
+					(key-socket-right-almost-top-corner-relative-dot
+						(dec columns-last-index)
 						row
 					)
 
 					(partial shape-place-at-key (dec columns-last-index) row)
 					:east
-					(thumb-cluster-key-socket-bottom-right-corner-relative-dot
-						(dec thumb-cluster-columns-last-index)
+					(key-socket-right-almost-bottom-corner-relative-dot
+						(dec columns-last-index)
 						row
 					)
 				)
 			)
 			;; Have the inter row pads extend to the empty cells column.
 			[
-				(hull-triangle-mesh
-					(key-socket-top-left-corner-absolute-dot
+				(case-lower-lip-shapes
+					(partial shape-place-at-key columns-last-index 2)
+					:south
+					(key-socket-top-middle-relative-dot
 						columns-last-index
 						2
 					)
-					(key-socket-top-right-corner-absolute-dot
+
+					(partial shape-place-at-key (dec columns-last-index) 2)
+					:east
+					(key-socket-right-middle-relative-dot
+						(dec columns-last-index)
+						2
+					)
+				)
+
+				(case-lower-lip-shapes
+					(partial shape-place-at-key columns-last-index 2)
+					:south
+					(key-socket-top-middle-relative-dot
 						columns-last-index
 						2
 					)
-					(key-socket-bottom-left-corner-absolute-dot
+
+					(partial shape-place-at-key columns-last-index 2)
+					:south
+					(key-socket-top-right-corner-relative-dot
 						columns-last-index
-						3
+						2
 					)
-					(key-socket-bottom-right-corner-absolute-dot
-						columns-last-index
-						3
+				)
+
+				(case-lower-lip-shapes
+					(partial shape-place-at-key (dec columns-last-index) 2)
+					:east
+					(key-socket-right-middle-relative-dot
+						(dec columns-last-index)
+						2
+					)
+
+					(partial shape-place-at-key (dec columns-last-index) 2)
+					:east
+					(key-socket-bottom-right-corner-relative-dot
+						(dec columns-last-index)
+						2
 					)
 				)
 			]

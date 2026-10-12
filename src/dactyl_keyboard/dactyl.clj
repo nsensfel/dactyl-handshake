@@ -3088,16 +3088,41 @@
 				(case-lower-lip-shapes
 					(partial shape-place-at-key (dec columns-last-index) row)
 					:east
-					(key-socket-right-almost-top-corner-relative-dot
+					(key-socket-top-right-corner-relative-dot
 						(dec columns-last-index)
 						row
 					)
 
 					(partial shape-place-at-key (dec columns-last-index) row)
 					:east
-					(key-socket-right-almost-bottom-corner-relative-dot
+					(key-socket-bottom-right-corner-relative-dot
 						(dec columns-last-index)
 						row
+					)
+				)
+			)
+			(for
+				[
+					row rows-index-list
+					:when
+						(and
+							(not (key-is-not-void? columns-last-index row))
+							(not (key-is-not-void? columns-last-index (dec row)))
+						)
+				]
+				(case-lower-lip-shapes
+					(partial shape-place-at-key (dec columns-last-index) row)
+					:east
+					(key-socket-bottom-right-corner-relative-dot
+						(dec columns-last-index)
+						row
+					)
+
+					(partial shape-place-at-key (dec columns-last-index) (dec row))
+					:east
+					(key-socket-top-right-corner-relative-dot
+						(dec columns-last-index)
+						(dec row)
 					)
 				)
 			)
@@ -3146,6 +3171,28 @@
 					(partial shape-place-at-key (dec columns-last-index) 2)
 					:east
 					(key-socket-bottom-right-corner-relative-dot
+						(dec columns-last-index)
+						2
+					)
+				)
+				(hull-triangle-mesh
+					(key-socket-bottom-right-corner-absolute-dot
+						columns-last-index
+						3
+					)
+					(key-socket-top-right-corner-absolute-dot
+						columns-last-index
+						2
+					)
+					(key-socket-bottom-right-corner-absolute-dot
+						(dec columns-last-index)
+						3
+					)
+					(key-socket-top-middle-absolute-dot
+						columns-last-index
+						2
+					)
+					(key-socket-right-middle-absolute-dot
 						(dec columns-last-index)
 						2
 					)

@@ -46,7 +46,7 @@
 (defn key-inter-row-margin [column row] 4.0)
 
 ;; Margin between two columns (horizontal space between keys).
-(defn key-inter-column-margin [column row] 2.0)
+(defn key-inter-column-margin [column row] 4.0)
 
 (def shell-thickness 4.5)
 
@@ -67,17 +67,15 @@
 ;; Index (0 based) of the column to be considered as the middle one.
 (def columns-middle-index 4)
 
-;; TODO: not sure this is actually that.
-(def keyboard-center-height 180)
+(def keyboard-center-height 20)
 
-;; FIXME: That's probably rads anyway...
-(def keyboard-tenting-angle 100)
+(def keyboard-tenting-angle 0)
 
 ;; Base curvature of the columns (rads).
 (def columns-base-curvature (/ pi (- 12 6)))
 
 ;; Base curvature of the rows (rads).
-(def rows-base-curvature (/ pi (+ 36 0)))
+(def rows-base-curvature (/ pi (- 32)))
 
 ;; Lets you specify conditions for a key to use the 1-5u format.
 ;; The default example has none.
@@ -155,9 +153,9 @@
 (def thumb-cluster-rows-count 2)
 (def thumb-cluster-columns-count 3)
 (def thumb-cluster-rows-middle-index 0)
-(def thumb-cluster-columns-middle-index (dec thumb-cluster-columns-count))
+(def thumb-cluster-columns-middle-index 1)
 (def thumb-cluster-columns-base-curvature 0.1)
-(def thumb-cluster-rows-base-curvature -0.1)
+(def thumb-cluster-rows-base-curvature (/ pi -4))
 
 ;; Margin between two rows (vertical space between keys).
 (defn thumb-cluster-key-inter-row-margin [column row] 2)
@@ -2733,7 +2731,7 @@
 						:west
 						(shape-place-at-thumb-cluster-key-sockets-relative
 							0
-							(dec y)
+							y
 							:bottom-left-corner
 							key-socket-centered-location-dot
 						)
@@ -2837,104 +2835,83 @@
 )
 
 (def thumb-cluster-to-keyboard-connecting-shape
-;;	(hull
-;;		(shape-place-at-key-sockets-absolute
-;;			columns-last-index
-;;			rows-middle-index
-;;			:right-middle
-;;			(translate
-;;				[0 wall-z-offset key-sockets-thickness]
-;;				(rotate
-;;					(/ pi 2)
-;;					[0 1 0]
-;;					(case-upper-and-enclosed-lip-shapes
-;;						(partial translate [0 0 0])
-;;						:north
-;;						(shape-place-at-thumb-cluster-key-sockets-relative
-;;							thumb-cluster-columns-last-index
-;;							thumb-cluster-rows-last-index
-;;							:top-middle
-;;							key-socket-centered-location-dot
-;;						)
-;;
-;;						(partial translate [0 0 0])
-;;						:north
-;;						(shape-place-at-thumb-cluster-key-sockets-relative
-;;							thumb-cluster-columns-last-index
-;;							thumb-cluster-rows-last-index
-;;							:top-middle
-;;							key-socket-centered-location-dot
-;;						)
-;;					)
-;;				)
-;;			)
-;;		)
-;;
-;;		(case-upper-and-enclosed-lip-shapes
-;;			(partial
-;;				shape-place-at-thumb-cluster-key
-;;				thumb-cluster-columns-last-index
-;;				thumb-cluster-rows-last-index
-;;			)
-;;			:north
-;;			(shape-place-at-thumb-cluster-key-sockets-relative
-;;				thumb-cluster-columns-last-index
-;;				thumb-cluster-rows-last-index
-;;				:top-right-corner
-;;				key-socket-centered-location-dot
-;;			)
-;;
-;;			(partial
-;;				shape-place-at-thumb-cluster-key
-;;				thumb-cluster-columns-last-index
-;;				thumb-cluster-rows-last-index
-;;			)
-;;			:north
-;;			(shape-place-at-thumb-cluster-key-sockets-relative
-;;				thumb-cluster-columns-last-index
-;;				thumb-cluster-rows-last-index
-;;				:top-right-corner
-;;				key-socket-centered-location-dot
-;;			)
-;;		)
-;;	)
-	(case-upper-and-enclosed-lip-shapes
-		(partial
-			shape-place-at-thumb-cluster-key
-			thumb-cluster-columns-last-index
-			thumb-cluster-rows-last-index
+	(union
+		(hull-triangle-mesh
+			(thumb-cluster-key-socket-place-absolute-dot
+				thumb-cluster-columns-last-index
+				thumb-cluster-rows-last-index
+				:top-right-corner
+				key-socket-centered-location-dot
+			)
+			(key-socket-place-absolute-dot
+				columns-last-index
+				rows-middle-index
+				:right-middle
+				(rotate (/ pi 2) [0 1 0] key-socket-centered-location-dot)
+			)
+			(thumb-cluster-key-socket-place-absolute-dot
+				thumb-cluster-columns-last-index
+				thumb-cluster-rows-last-index
+				:bottom-right-corner
+				key-socket-centered-location-dot
+			)
+			(key-socket-place-absolute-dot
+				columns-last-index
+				rows-middle-index
+				:bottom-right-corner
+				(rotate (/ pi 2) [0 1 0] key-socket-centered-location-dot)
+			)
+			(thumb-cluster-key-socket-place-absolute-dot
+				thumb-cluster-columns-last-index
+				(dec thumb-cluster-rows-last-index)
+				:top-right-corner
+				key-socket-centered-location-dot
+			)
+			(thumb-cluster-key-socket-place-absolute-dot
+				thumb-cluster-columns-last-index
+				(dec thumb-cluster-rows-last-index)
+				:bottom-right-corner
+				key-socket-centered-location-dot
+			)
 		)
-		:north
-		(shape-place-at-thumb-cluster-key-sockets-relative
-			thumb-cluster-columns-last-index
-			thumb-cluster-rows-last-index
-			:top-right-corner
-			key-socket-centered-location-dot
-		)
+		(case-upper-and-enclosed-lip-shapes
+			(partial
+				shape-place-at-thumb-cluster-key
+				thumb-cluster-columns-last-index
+				thumb-cluster-rows-last-index
+			)
+			:north
+			(shape-place-at-thumb-cluster-key-sockets-relative
+				thumb-cluster-columns-last-index
+				thumb-cluster-rows-last-index
+				:top-right-corner
+				key-socket-centered-location-dot
+			)
 
-		(partial
-			(fn [shape]
-				(shape-place-at-key-sockets-absolute
-					columns-last-index
-					rows-middle-index
-					:right-middle
-					(translate
-						[0 wall-z-offset (* key-sockets-thickness 2)]
-						(rotate
-							(/ pi 2)
-							[0 1 0]
-							shape
+			(partial
+				(fn [shape]
+					(shape-place-at-key-sockets-absolute
+						columns-last-index
+						rows-middle-index
+						:right-middle
+						(translate
+							[0 wall-z-offset (* key-sockets-thickness 2)]
+							(rotate
+								(/ pi 2)
+								[0 1 0]
+								shape
+							)
 						)
 					)
 				)
 			)
-		)
-		:north
-		(shape-place-at-thumb-cluster-key-sockets-relative
-			thumb-cluster-columns-last-index
-			thumb-cluster-rows-last-index
-			:top-right-corner
-			key-socket-centered-location-dot
+			:north
+			(shape-place-at-thumb-cluster-key-sockets-relative
+				thumb-cluster-columns-last-index
+				thumb-cluster-rows-last-index
+				:top-right-corner
+				key-socket-centered-location-dot
+			)
 		)
 	)
 )
@@ -2992,7 +2969,7 @@
 	)
 )
 
-(def model-right
+(def model-left
 	(difference
 		(union
 			key-sockets-all-shapes
@@ -3015,13 +2992,13 @@
 
 ;;(spit "things/right.scad" (write-scad model-right))
 (try
-	(spit "things/right.scad" (write-scad model-right))
+	(spit "things/left.scad" (write-scad model-left))
 	(catch Exception e
 		(.printStackTrace e)
 	)
 )
 
-(spit "things/left.scad" (write-scad (mirror [-1 0 0] model-right)))
+(spit "things/right.scad" (write-scad (mirror [-1 0 0] model-left)))
 
 ;;(spit "things/right-test.scad"
 ;;	(write-scad
@@ -3030,7 +3007,7 @@
 ;;)
 
 (try
-	(spit "things/right-plate.scad"
+	(spit "things/left-plate.scad"
 		(write-scad
 			(extrude-linear
 				{:height 2.6 :center false}

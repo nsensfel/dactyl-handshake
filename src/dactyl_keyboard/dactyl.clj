@@ -43,7 +43,7 @@
 (def wall-thickness 2)
 
 ;; Margin between two rows (vertical space between keys).
-(defn key-inter-row-margin [_column _row] 8.0)
+(defn key-inter-row-margin [_column _row] 6.0)
 
 ;; Margin between two columns (horizontal space between keys).
 (defn key-inter-column-margin [_column _row] 4.0)
@@ -81,7 +81,7 @@
 ;; The default example has none.
 (defn key-type [column row]
 	(cond
-		(= column 0) :s1-5u-horizontal
+		;;(= column 0) :s1-5u-horizontal
 		:else :s1u
 	)
 )
@@ -523,31 +523,41 @@
 					adjusted-shape
 					(reduce
 						(fn [shape-step row-step]
-							(rotate-x-fn
-								(*
-									(key-column-curvature column row-step)
-									row-range-step
-								)
-								(translate-fn
-									[
-										0
-										(*
-											(+
-												(/ (key-outer-height column row-step) 2)
+							(translate-fn
+								[
+									0
+									(*
+										row-range-step
+										(/ (key-inter-row-margin column row-step) 2)
+									)
+									0
+								]
+								(rotate-x-fn
+									(*
+										(key-column-curvature column row-step)
+										row-range-step
+									)
+									(translate-fn
+										[
+											0
+											(*
 												(/
-													(key-outer-height
-														column
-														(+ row-step row-range-step)
+													(+
+														(key-outer-height column row-step)
+														(key-outer-height
+															column
+															(+ row-step row-range-step)
+														)
+														(key-inter-row-margin column row-step)
 													)
 													2
 												)
-												(key-inter-row-margin column row-step)
+												row-range-step
 											)
-											row-range-step
-										)
-										(- key-sockets-thickness)
-									]
-									shape-step
+											(- key-sockets-thickness)
+										]
+										shape-step
+									)
 								)
 							)
 						)
@@ -561,31 +571,41 @@
 					placed-in-column
 					(reduce
 						(fn [shape-step column-step]
-							(rotate-y-fn
-								(*
-									(key-row-curvature column-step row)
-									column-range-step
-								)
-								(translate-fn
-									[
-										(*
-											(+
-												(/ (key-outer-width column-step row) 2)
+							(translate-fn
+								[
+									(*
+										column-range-step
+										(/ (key-inter-column-margin column-step row) 2)
+									)
+									0
+									0
+								]
+								(rotate-y-fn
+									(*
+										(key-row-curvature column-step row)
+										column-range-step
+									)
+									(translate-fn
+										[
+											(*
 												(/
-													(key-outer-width
-														(+ column-step column-range-step)
-														row
+													(+
+														(key-outer-width column-step row)
+														(key-outer-width
+															(+ column-step column-range-step)
+															row
+														)
+														(key-inter-column-margin column-step row)
 													)
 													2
 												)
-												(key-inter-column-margin column-step row)
+												column-range-step
 											)
-											column-range-step
-										)
-										0
-										0
-									]
-									shape-step
+											0
+											0
+										]
+										shape-step
+									)
 								)
 							)
 						)
@@ -1430,43 +1450,56 @@
 					adjusted-shape
 					(reduce
 						(fn [shape-step row-step]
-							(rotate-x-fn
-								(*
-									(thumb-cluster-key-column-curvature
-										column
-										row-step
-									)
-									row-range-step
-								)
-								(translate-fn
-									[
-										0
-										(*
-											(+
-												(/
-													(thumb-cluster-key-outer-height
-														column
-														row-step
-													)
-													2
-												)
-												(/
-													(thumb-cluster-key-outer-height
-														column
-														(+ row-step row-range-step)
-													)
-													2
-												)
-												(thumb-cluster-key-inter-row-margin
-													column
-													row-step
-												)
+							(translate-fn
+								[
+									0
+									(*
+										(/
+											(thumb-cluster-key-inter-row-margin
+												column
+												row-step
 											)
-											row-range-step
+											2
 										)
-										0
-									]
-									shape-step
+										row-range-step
+									)
+									0
+								]
+								(rotate-x-fn
+									(*
+										(thumb-cluster-key-column-curvature
+											column
+											row-step
+										)
+										row-range-step
+									)
+									(translate-fn
+										[
+											0
+											(*
+												(/
+													(+
+														(thumb-cluster-key-outer-height
+															column
+															row-step
+														)
+														(thumb-cluster-key-outer-height
+															column
+															(+ row-step row-range-step)
+														)
+														(thumb-cluster-key-inter-row-margin
+															column
+															row-step
+														)
+													)
+													2
+												)
+												row-range-step
+											)
+											0
+										]
+										shape-step
+									)
 								)
 							)
 						)
@@ -1480,40 +1513,53 @@
 					placed-in-column
 					(reduce
 						(fn [shape-step column-step]
-							(rotate-y-fn
-								(*
-									(thumb-cluster-key-row-curvature column-step row)
-									column-range-step
-								)
-								(translate-fn
-									[
-										(*
-											(+
-												(/
-													(thumb-cluster-key-outer-width
-														column-step
-														row
-													)
-													2
-												)
-												(/
-													(thumb-cluster-key-outer-width
-														(+ column-step column-range-step)
-														row
-													)
-													2
-												)
-												(thumb-cluster-key-inter-column-margin
-													column-step
-													row
-												)
+							(translate-fn
+								[
+									(*
+										(/
+											(thumb-cluster-key-inter-column-margin
+												column-step
+												row
 											)
-											column-range-step
+											2
 										)
-										0
-										0
-									]
-									shape-step
+										column-range-step
+									)
+									0
+									0
+								]
+								(rotate-y-fn
+									(*
+										(thumb-cluster-key-row-curvature column-step row)
+										column-range-step
+									)
+									(translate-fn
+										[
+											(*
+												(/
+													(+
+														(thumb-cluster-key-outer-width
+															column-step
+															row
+														)
+														(thumb-cluster-key-outer-width
+															(+ column-step column-range-step)
+															row
+														)
+														(thumb-cluster-key-inter-column-margin
+															column-step
+															row
+														)
+													)
+													2
+												)
+												column-range-step
+											)
+											0
+											0
+										]
+										shape-step
+									)
 								)
 							)
 						)
@@ -1549,7 +1595,7 @@
 	]
 	(let
 		[
-			[top-x top-y top-z]
+			[top-x _top-y _top-z]
 				(thumb-cluster-key-get-base-position
 					thumb-cluster-columns-last-index
 					0
@@ -2043,48 +2089,49 @@
 	[
 		place-function-1
 		direction-1
-		corner-location-1
+		shape-1
+
 		place-function-2
 		direction-2
-		corner-location-2
+		shape-2
 	]
 	(hull-triangle-mesh
-		(place-function-1 corner-location-1)
-		(place-function-2 corner-location-2)
+		(place-function-1 shape-1)
+		(place-function-2 shape-2)
 		(place-function-1
 			(translate
 				(case-upper-lip-inner-offset direction-1)
-				corner-location-1
+				shape-1
 			)
 		)
 		(place-function-2
 			(translate
 				(case-upper-lip-inner-offset direction-2)
-				corner-location-2
+				shape-2
 			)
 		)
 		(place-function-1
 			(translate
 				(case-upper-lip-middle-offset direction-1)
-				corner-location-1
+				shape-1
 			)
 		)
 		(place-function-2
 			(translate
 				(case-upper-lip-middle-offset direction-2)
-				corner-location-2
+				shape-2
 			)
 		)
 		(place-function-1
 			(translate
 				(case-upper-lip-outer-offset direction-1)
-				corner-location-1
+				shape-1
 			)
 		)
 		(place-function-2
 			(translate
 				(case-upper-lip-outer-offset direction-2)
-				corner-location-2
+				shape-2
 			)
 		)
 	)
@@ -2094,23 +2141,23 @@
 	[
 		place-function-1
 		direction-1
-		corner-location-1
+		shape-1
 		offset-1
 
 		place-function-2
 		direction-2
-		corner-location-2
+		shape-2
 		offset-2
 	]
 	(hull-triangle-mesh
-		(place-function-1 (translate offset-1 corner-location-1))
-		(place-function-2 (translate offset-2 corner-location-2))
+		(place-function-1 (translate offset-1 shape-1))
+		(place-function-2 (translate offset-2 shape-2))
 		(place-function-1
 			(translate
 				offset-1
 				(translate
 					(case-upper-lip-inner-offset direction-1)
-					corner-location-1
+					shape-1
 				)
 			)
 		)
@@ -2119,7 +2166,7 @@
 				offset-2
 				(translate
 					(case-upper-lip-inner-offset direction-2)
-					corner-location-2
+					shape-2
 				)
 			)
 		)
@@ -2128,7 +2175,7 @@
 				offset-1
 				(translate
 					(case-upper-lip-middle-offset direction-1)
-					corner-location-1
+					shape-1
 				)
 			)
 		)
@@ -2137,7 +2184,7 @@
 				offset-2
 				(translate
 					(case-upper-lip-middle-offset direction-2)
-					corner-location-2
+					shape-2
 				)
 			)
 		)
@@ -2146,7 +2193,7 @@
 				offset-1
 				(translate
 					(case-upper-lip-outer-offset direction-1)
-					corner-location-1
+					shape-1
 				)
 			)
 		)
@@ -2155,7 +2202,7 @@
 				offset-2
 				(translate
 					(case-upper-lip-outer-offset direction-2)
-					corner-location-2
+					shape-2
 				)
 			)
 		)
@@ -2166,10 +2213,11 @@
 	[
 		place-function-1
 		direction-1
-		corner-location-1
+		shape-1
+
 		place-function-2
 		direction-2
-		corner-location-2
+		shape-2
 	]
 	(case-upper-lip-shapes
 		(fn [shape]
@@ -2186,7 +2234,8 @@
 			)
 		)
 		direction-1
-		corner-location-1
+		shape-1
+
 		(fn [shape]
 			(place-function-2
 				(translate
@@ -2201,7 +2250,7 @@
 			)
 		)
 		direction-2
-		corner-location-2
+		shape-2
 	)
 )
 
@@ -2209,27 +2258,30 @@
 	[
 		place-function-1
 		direction-1
-		corner-location-1
+		shape-1
+
 		place-function-2
 		direction-2
-		corner-location-2
+		shape-2
 	]
 	(union
 		(case-upper-lip-shapes
 			place-function-1
 			direction-1
-			corner-location-1
+			shape-1
+
 			place-function-2
 			direction-2
-			corner-location-2
+			shape-2
 		)
 		(case-enclosed-lip-shapes
 			place-function-1
 			direction-1
-			corner-location-1
+			shape-1
+
 			place-function-2
 			direction-2
-			corner-location-2
+			shape-2
 		)
 	)
 )
@@ -2238,43 +2290,45 @@
 	[
 		place-function-1
 		direction-1
-		corner-location-1
+		shape-1
+
 		place-function-2
 		direction-2
-		corner-location-2
+		shape-2
 	]
 	(union
 		(case-upper-lip-shapes
 			place-function-1
 			direction-1
-			corner-location-1
+			shape-1
+
 			place-function-2
 			direction-2
-			corner-location-2
+			shape-2
 		)
 		(hull-to-ground
 			(place-function-1
 				(translate
 					(case-upper-lip-outer-offset direction-1)
-					corner-location-1
+					shape-1
 				)
 			)
 			(place-function-1
 				(translate
 					(case-upper-lip-middle-offset direction-1)
-					corner-location-1
+					shape-1
 				)
 			)
 			(place-function-2
 				(translate
 					(case-upper-lip-outer-offset direction-2)
-					corner-location-2
+					shape-2
 				)
 			)
 			(place-function-2
 				(translate
 					(case-upper-lip-middle-offset direction-2)
-					corner-location-2
+					shape-2
 				)
 			)
 		)
@@ -2286,19 +2340,20 @@
 		column-1
 		row-1
 		direction-1
-		corner-location-1
+		shape-1
+
 		column-2
 		row-2
 		direction-2
-		corner-location-2
+		shape-2
 	]
 	(wall-and-case-upper-lip-shapes
 		(partial shape-place-at-key column-1 row-1)
 		direction-1
-		corner-location-1
+		shape-1
 		(partial shape-place-at-key column-2 row-2)
 		direction-2
-		corner-location-2
+		shape-2
 	)
 )
 
@@ -2308,11 +2363,13 @@
 			column-1
 			row-1
 			direction-1
-			corner-location-1
+			shape-1
+
 			column-2
 			row-2
 			direction-2
-			corner-location-2
+			shape-2
+
 			offset
 		]
 		(wall-and-case-upper-lip-shapes
@@ -2320,13 +2377,13 @@
 				(translate offset (shape-place-at-key column-1 row-1 shape))
 			)
 			direction-1
-			corner-location-1
+			shape-1
 
 			(fn [shape]
 				(translate offset (shape-place-at-key column-2 row-2 shape))
 			)
 			direction-2
-			corner-location-2
+			shape-2
 		)
 	)
 	(
@@ -2334,13 +2391,13 @@
 			column-1
 			row-1
 			direction-1
-			corner-location-1
+			shape-1
 			offset-1
 
 			column-2
 			row-2
 			direction-2
-			corner-location-2
+			shape-2
 			offset-2
 		]
 		(wall-and-case-upper-lip-shapes
@@ -2348,18 +2405,18 @@
 				(translate offset-1 (shape-place-at-key column-1 row-1 shape))
 			)
 			direction-1
-			corner-location-1
+			shape-1
 
 			(fn [shape]
 				(translate offset-2 (shape-place-at-key column-2 row-2 shape))
 			)
 			direction-2
-			corner-location-2
+			shape-2
 		)
 	)
 )
 
-(def thumb-cluster-south-east-keyboard-height-offset
+(def thumb-cluster-south-east-keyboard-depth-offset
 	(let
 		[
 			[_tcx _tcy tcz]
@@ -2379,6 +2436,8 @@
 		(- tcz bz)
 	)
 )
+
+(def thumb-cluster-south-east-keyboard-height-offset -25)
 
 (def case-walls
 	(union
@@ -2410,9 +2469,71 @@
 						)
 						[
 							0
-							-25
 							thumb-cluster-south-east-keyboard-height-offset
+							thumb-cluster-south-east-keyboard-depth-offset
 						]
+					)
+				)
+				(when (not (= (key-status x 0) :void-no-walls))
+					(hull-triangle-mesh
+						;; FIXME: it's a mess, but here should be the palm rest
+						(shape-place-at-key-sockets-absolute
+							x
+							0
+							:bottom-left-corner
+							key-socket-centered-location-dot
+						)
+						(translate
+							[
+								0
+								thumb-cluster-south-east-keyboard-height-offset
+								thumb-cluster-south-east-keyboard-depth-offset
+							]
+							(shape-place-at-key-sockets-absolute
+								x
+								0
+								:bottom-left-corner
+								key-socket-centered-location-dot
+							)
+						)
+						(shape-place-at-key-sockets-absolute
+							x
+							0
+							:bottom-right-corner
+							key-socket-centered-location-dot
+						)
+						(translate
+							[
+								0
+								thumb-cluster-south-east-keyboard-height-offset
+								thumb-cluster-south-east-keyboard-depth-offset
+							]
+							(shape-place-at-key-sockets-absolute
+								x
+								0
+								:bottom-right-corner
+								key-socket-centered-location-dot
+							)
+						)
+						(shape-place-at-key-sockets-absolute
+							(+ x 1)
+							0
+							:bottom-left-corner
+							key-socket-centered-location-dot
+						)
+						(translate
+							[
+								0
+								thumb-cluster-south-east-keyboard-height-offset
+								thumb-cluster-south-east-keyboard-depth-offset
+							]
+							(shape-place-at-key-sockets-absolute
+								(+ x 1)
+								0
+								:bottom-left-corner
+								key-socket-centered-location-dot
+							)
+						)
 					)
 				)
 				(when (not (= (key-status x rows-last-index) :void-no-walls))
@@ -2467,7 +2588,7 @@
 					[
 						0
 						-25
-						thumb-cluster-south-east-keyboard-height-offset
+						thumb-cluster-south-east-keyboard-depth-offset
 					]
 				)
 				(wall-and-case-upper-lip-shapes-between-keys
@@ -2663,8 +2784,8 @@
 			)
 			[
 				0
-				-25
 				thumb-cluster-south-east-keyboard-height-offset
+				thumb-cluster-south-east-keyboard-depth-offset
 			]
 		)
 		(offset-wall-and-case-upper-lip-shapes-between-keys
@@ -2694,8 +2815,8 @@
 			)
 			[
 				0
-				-25
 				thumb-cluster-south-east-keyboard-height-offset
+				thumb-cluster-south-east-keyboard-depth-offset
 			]
 		)
 	)

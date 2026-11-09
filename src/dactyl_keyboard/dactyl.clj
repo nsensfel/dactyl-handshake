@@ -139,7 +139,7 @@
 			(* 1.3 columns-base-curvature) ;; pinky is shorter
 
 		(and (>= row rows-middle-index) (== column columns-middle-index))
-			(* 0.8 columns-base-curvature) ;; middle finger is longer.
+			(* 0.9 columns-base-curvature) ;; middle finger is longer.
 
 		:else columns-base-curvature
 	)

@@ -65,7 +65,7 @@
 (def rows-middle-index (- rows-count 3))
 
 ;; Index (0 based) of the column to be considered as the middle one.
-(def columns-middle-index 4)
+(def columns-middle-index 2)
 
 (def keyboard-center-height 20)
 
@@ -104,13 +104,19 @@
 		;; Actual configuration:
 		(and
 			(== column columns-last-index)
-			(or
-				(== row 0)
-				(== row 1)
-				(== row 2)
-			)
+			(== row 0)
 		)
 			:void-no-walls
+
+		(and
+			(== column columns-last-index)
+			(or
+				(== row 2)
+				(== row 1)
+			)
+		)
+			:void
+
 		:else :socket
 	)
 )
@@ -129,6 +135,12 @@
 (defn key-column-curvature [column row]
 	(cond
 		(and (== row rows-count) (== column columns-count)) pi ;; impossible cond.
+		(and (>= row rows-middle-index) (== column 0))
+			(* 1.3 columns-base-curvature) ;; pinky is shorter
+
+		(and (>= row rows-middle-index) (== column columns-middle-index))
+			(* 0.8 columns-base-curvature) ;; middle finger is longer.
+
 		:else columns-base-curvature
 	)
 )
@@ -523,40 +535,58 @@
 					adjusted-shape
 					(reduce
 						(fn [shape-step row-step]
-							(translate-fn
+							(let
 								[
-									0
-									(*
-										row-range-step
-										(/ (key-inter-row-margin column row-step) 2)
-									)
-									0
+									this-row-index
+										(+
+											rows-middle-index
+											(* row-step row-range-step)
+										)
 								]
-								(rotate-x-fn
-									(*
-										(key-column-curvature column row-step)
-										row-range-step
-									)
-									(translate-fn
-										[
-											0
-											(*
-												(/
-													(+
-														(key-outer-height column row-step)
-														(key-outer-height
-															column
-															(+ row-step row-range-step)
-														)
-														(key-inter-row-margin column row-step)
-													)
-													2
-												)
-												row-range-step
+								(translate-fn
+									[
+										0
+										(*
+											row-range-step
+											(/
+												(key-inter-row-margin column this-row-index)
+												2
 											)
-											(- key-sockets-thickness)
-										]
-										shape-step
+										)
+										0
+									]
+									(rotate-x-fn
+										(*
+											(key-column-curvature column this-row-index)
+											row-range-step
+										)
+										(translate-fn
+											[
+												0
+												(*
+													(/
+														(+
+															(key-outer-height
+																column
+																this-row-index
+															)
+															(key-outer-height
+																column
+																(+ this-row-index row-range-step)
+															)
+															(key-inter-row-margin
+																column
+																this-row-index
+															)
+														)
+														2
+													)
+													row-range-step
+												)
+												(- key-sockets-thickness)
+											]
+											shape-step
+										)
 									)
 								)
 							)
@@ -571,40 +601,64 @@
 					placed-in-column
 					(reduce
 						(fn [shape-step column-step]
-							(translate-fn
+							(let
 								[
-									(*
-										column-range-step
-										(/ (key-inter-column-margin column-step row) 2)
-									)
-									0
-									0
+									this-column-index
+										(+
+											columns-middle-index
+											(* column-step column-range-step)
+										)
 								]
-								(rotate-y-fn
-									(*
-										(key-row-curvature column-step row)
-										column-range-step
-									)
-									(translate-fn
-										[
-											(*
-												(/
-													(+
-														(key-outer-width column-step row)
-														(key-outer-width
-															(+ column-step column-range-step)
-															row
-														)
-														(key-inter-column-margin column-step row)
-													)
-													2
+								(translate-fn
+									[
+										(*
+											column-range-step
+											(/
+												(key-inter-column-margin
+													this-column-index
+													row
 												)
-												column-range-step
+												2
 											)
-											0
-											0
-										]
-										shape-step
+										)
+										0
+										0
+									]
+									(rotate-y-fn
+										(*
+											(key-row-curvature this-column-index row)
+											column-range-step
+										)
+										(translate-fn
+											[
+												(*
+													(/
+														(+
+															(key-outer-width
+																this-column-index
+																row
+															)
+															(key-outer-width
+																(+
+																	this-column-index
+																	column-range-step
+																)
+																row
+															)
+															(key-inter-column-margin
+																this-column-index
+																row
+															)
+														)
+														2
+													)
+													column-range-step
+												)
+												0
+												0
+											]
+											shape-step
+										)
 									)
 								)
 							)
@@ -1450,55 +1504,64 @@
 					adjusted-shape
 					(reduce
 						(fn [shape-step row-step]
-							(translate-fn
+							(let
 								[
-									0
-									(*
-										(/
-											(thumb-cluster-key-inter-row-margin
-												column
-												row-step
-											)
-											2
+									this-row-index
+										(+
+											thumb-cluster-rows-middle-index
+											(* row-step row-range-step)
 										)
-										row-range-step
-									)
-									0
 								]
-								(rotate-x-fn
-									(*
-										(thumb-cluster-key-column-curvature
-											column
-											row-step
-										)
-										row-range-step
-									)
-									(translate-fn
-										[
-											0
-											(*
-												(/
-													(+
-														(thumb-cluster-key-outer-height
-															column
-															row-step
-														)
-														(thumb-cluster-key-outer-height
-															column
-															(+ row-step row-range-step)
-														)
-														(thumb-cluster-key-inter-row-margin
-															column
-															row-step
-														)
-													)
-													2
+								(translate-fn
+									[
+										0
+										(*
+											(/
+												(thumb-cluster-key-inter-row-margin
+													column
+													this-row-index
 												)
-												row-range-step
+												2
 											)
-											0
-										]
-										shape-step
+											row-range-step
+										)
+										0
+									]
+									(rotate-x-fn
+										(*
+											(thumb-cluster-key-column-curvature
+												column
+												this-row-index
+											)
+											row-range-step
+										)
+										(translate-fn
+											[
+												0
+												(*
+													(/
+														(+
+															(thumb-cluster-key-outer-height
+																column
+																this-row-index
+															)
+															(thumb-cluster-key-outer-height
+																column
+																(+ this-row-index row-range-step)
+															)
+															(thumb-cluster-key-inter-row-margin
+																column
+																this-row-index
+															)
+														)
+														2
+													)
+													row-range-step
+												)
+												0
+											]
+											shape-step
+										)
 									)
 								)
 							)
@@ -1513,52 +1576,67 @@
 					placed-in-column
 					(reduce
 						(fn [shape-step column-step]
-							(translate-fn
+							(let
 								[
-									(*
-										(/
-											(thumb-cluster-key-inter-column-margin
-												column-step
+									this-column-index
+										(+
+											thumb-cluster-columns-middle-index
+											(* column-step column-range-step)
+										)
+								]
+								(translate-fn
+									[
+										(*
+											(/
+												(thumb-cluster-key-inter-column-margin
+													this-column-index
+													row
+												)
+												2
+											)
+											column-range-step
+										)
+										0
+										0
+									]
+									(rotate-y-fn
+										(*
+											(thumb-cluster-key-row-curvature
+												this-column-index
 												row
 											)
-											2
+											column-range-step
 										)
-										column-range-step
-									)
-									0
-									0
-								]
-								(rotate-y-fn
-									(*
-										(thumb-cluster-key-row-curvature column-step row)
-										column-range-step
-									)
-									(translate-fn
-										[
-											(*
-												(/
-													(+
-														(thumb-cluster-key-outer-width
-															column-step
-															row
+										(translate-fn
+											[
+												(*
+													(/
+														(+
+															(thumb-cluster-key-outer-width
+																this-column-index
+																row
+															)
+															(thumb-cluster-key-outer-width
+																(+
+																	this-column-index
+																	column-range-step
+																)
+																row
+															)
+															(thumb-cluster-key-inter-column-margin
+																this-column-index
+																row
+															)
 														)
-														(thumb-cluster-key-outer-width
-															(+ column-step column-range-step)
-															row
-														)
-														(thumb-cluster-key-inter-column-margin
-															column-step
-															row
-														)
+														2
 													)
-													2
+													column-range-step
 												)
-												column-range-step
-											)
-											0
-											0
-										]
-										shape-step
+												0
+												0
+											]
+											shape-step
+										)
 									)
 								)
 							)
@@ -2067,71 +2145,131 @@
 	)
 )
 
-(defn case-upper-lip-outer-offset [direction]
+(defn case-upper-lip-outer-offset [xy-offset z-offset direction]
 	(let
 		[
-			[x y] (direction-to-vector direction wall-xy-offset)
+			[x y] (direction-to-vector direction xy-offset)
 		]
-		[x y wall-z-offset]
+		[x y z-offset]
 	)
 )
 
-(defn case-upper-lip-middle-offset [direction]
+(defn case-upper-lip-middle-offset [xy-offset z-offset direction]
 	(let
 		[
-			[x y] (direction-to-vector direction (+ wall-xy-offset wall-thickness))
+			[x y] (direction-to-vector direction (+ xy-offset wall-thickness))
 		]
-		[x y wall-z-offset]
+		[x y z-offset]
 	)
 )
 
 (defn case-upper-lip-shapes
-	[
-		place-function-1
-		direction-1
-		shape-1
+	(
+		[
+			xy-offset
+			z-offset
 
-		place-function-2
-		direction-2
-		shape-2
-	]
-	(hull-triangle-mesh
-		(place-function-1 shape-1)
-		(place-function-2 shape-2)
-		(place-function-1
-			(translate
-				(case-upper-lip-inner-offset direction-1)
-				shape-1
+			place-function-1
+			direction-1
+			shape-1
+
+			place-function-2
+			direction-2
+			shape-2
+		]
+		(hull-triangle-mesh
+			(place-function-1 shape-1)
+			(place-function-2 shape-2)
+			(place-function-1
+				(translate
+					(case-upper-lip-inner-offset direction-1)
+					shape-1
+				)
+			)
+			(place-function-2
+				(translate
+					(case-upper-lip-inner-offset direction-2)
+					shape-2
+				)
+			)
+			(place-function-1
+				(translate
+					(case-upper-lip-middle-offset xy-offset z-offset direction-1)
+					shape-1
+				)
+			)
+			(place-function-2
+				(translate
+					(case-upper-lip-middle-offset xy-offset z-offset direction-2)
+					shape-2
+				)
+			)
+			(place-function-1
+				(translate
+					(case-upper-lip-outer-offset xy-offset z-offset direction-1)
+					shape-1
+				)
+			)
+			(place-function-2
+				(translate
+					(case-upper-lip-outer-offset xy-offset z-offset direction-2)
+					shape-2
+				)
 			)
 		)
-		(place-function-2
-			(translate
-				(case-upper-lip-inner-offset direction-2)
-				shape-2
+	)
+	(
+		[
+			xy-offset-1
+			z-offset-1
+			place-function-1
+			direction-1
+			shape-1
+
+			xy-offset-2
+			z-offset-2
+			place-function-2
+			direction-2
+			shape-2
+		]
+		(hull-triangle-mesh
+			(place-function-1 shape-1)
+			(place-function-2 shape-2)
+			(place-function-1
+				(translate
+					(case-upper-lip-inner-offset direction-1)
+					shape-1
+				)
 			)
-		)
-		(place-function-1
-			(translate
-				(case-upper-lip-middle-offset direction-1)
-				shape-1
+			(place-function-2
+				(translate
+					(case-upper-lip-inner-offset direction-2)
+					shape-2
+				)
 			)
-		)
-		(place-function-2
-			(translate
-				(case-upper-lip-middle-offset direction-2)
-				shape-2
+			(place-function-1
+				(translate
+					(case-upper-lip-middle-offset xy-offset-1 z-offset-1 direction-1)
+					shape-1
+				)
 			)
-		)
-		(place-function-1
-			(translate
-				(case-upper-lip-outer-offset direction-1)
-				shape-1
+			(place-function-2
+				(translate
+					(case-upper-lip-middle-offset xy-offset-2 z-offset-2 direction-2)
+					shape-2
+				)
 			)
-		)
-		(place-function-2
-			(translate
-				(case-upper-lip-outer-offset direction-2)
-				shape-2
+			(place-function-1
+				(translate
+					(case-upper-lip-outer-offset xy-offset-1 z-offset-1 direction-1)
+					shape-1
+				)
+			)
+			(place-function-2
+				(translate
+					(case-upper-lip-outer-offset xy-offset-2 z-offset-2 direction-2)
+					shape-2
+				)
 			)
 		)
 	)
@@ -2139,6 +2277,9 @@
 
 (defn offset-case-upper-lip-shapes
 	[
+		xy-offset
+		z-offset
+
 		place-function-1
 		direction-1
 		shape-1
@@ -2174,7 +2315,7 @@
 			(translate
 				offset-1
 				(translate
-					(case-upper-lip-middle-offset direction-1)
+					(case-upper-lip-middle-offset xy-offset z-offset direction-1)
 					shape-1
 				)
 			)
@@ -2183,7 +2324,7 @@
 			(translate
 				offset-2
 				(translate
-					(case-upper-lip-middle-offset direction-2)
+					(case-upper-lip-middle-offset xy-offset z-offset direction-2)
 					shape-2
 				)
 			)
@@ -2192,7 +2333,7 @@
 			(translate
 				offset-1
 				(translate
-					(case-upper-lip-outer-offset direction-1)
+					(case-upper-lip-outer-offset xy-offset z-offset direction-1)
 					shape-1
 				)
 			)
@@ -2201,7 +2342,7 @@
 			(translate
 				offset-2
 				(translate
-					(case-upper-lip-outer-offset direction-2)
+					(case-upper-lip-outer-offset xy-offset z-offset direction-2)
 					shape-2
 				)
 			)
@@ -2210,62 +2351,139 @@
 )
 
 (defn case-enclosed-lip-shapes
-	[
-		place-function-1
-		direction-1
-		shape-1
+	(
+		[
+			xy-offset
+			z-offset
 
-		place-function-2
-		direction-2
-		shape-2
-	]
-	(case-upper-lip-shapes
-		(fn [shape]
-			(place-function-1
-				(translate
-					(let
-						[
-							[_ _ z] (case-upper-lip-outer-offset direction-1)
-						]
-						[0 0 (* z 2)]
+			place-function-1
+			direction-1
+			shape-1
+
+			place-function-2
+			direction-2
+			shape-2
+		]
+		(case-upper-lip-shapes
+			xy-offset
+			z-offset
+
+			(fn [shape]
+				(place-function-1
+					(translate
+						(let
+							[
+								[_ _ z]
+									(case-upper-lip-outer-offset
+										xy-offset
+										z-offset
+										direction-1
+									)
+							]
+							[0 0 (* z 2)]
+						)
+						(mirror [0 0 -1] shape)
 					)
-					(mirror [0 0 -1] shape)
 				)
 			)
-		)
-		direction-1
-		shape-1
+			direction-1
+			shape-1
 
-		(fn [shape]
-			(place-function-2
-				(translate
-					(let
-						[
-							[_ _ z] (case-upper-lip-outer-offset direction-2)
-						]
-						[0 0 (* z 2)]
+			(fn [shape]
+				(place-function-2
+					(translate
+						(let
+							[
+								[_ _ z]
+									(case-upper-lip-outer-offset
+										xy-offset
+										z-offset
+										direction-2
+									)
+							]
+							[0 0 (* z 2)]
+						)
+						(mirror [0 0 -1] shape)
 					)
-					(mirror [0 0 -1] shape)
 				)
 			)
+			direction-2
+			shape-2
 		)
-		direction-2
-		shape-2
+	)
+	(
+		[
+			xy-offset-1
+			z-offset-1
+
+			place-function-1
+			direction-1
+			shape-1
+
+			xy-offset-2
+			z-offset-2
+
+			place-function-2
+			direction-2
+			shape-2
+		]
+		(case-upper-lip-shapes
+			xy-offset-1
+			z-offset-1
+
+			(fn [shape]
+				(place-function-1
+					(translate
+						(let
+							[
+								[_ _ z]
+									(case-upper-lip-outer-offset
+										xy-offset-1
+										z-offset-1
+										direction-1
+									)
+							]
+							[0 0 (* z 2)]
+						)
+						(mirror [0 0 -1] shape)
+					)
+				)
+			)
+			direction-1
+			shape-1
+
+			xy-offset-2
+			z-offset-2
+			(fn [shape]
+				(place-function-2
+					(translate
+						(let
+							[
+								[_ _ z]
+									(case-upper-lip-outer-offset
+										xy-offset-2
+										z-offset-2
+										direction-2
+									)
+							]
+							[0 0 (* z 2)]
+						)
+						(mirror [0 0 -1] shape)
+					)
+				)
+			)
+			direction-2
+			shape-2
+		)
 	)
 )
 
 (defn case-upper-and-enclosed-lip-shapes
-	[
-		place-function-1
-		direction-1
-		shape-1
+	(
+		[
+			xy-offset
+			z-offset
 
-		place-function-2
-		direction-2
-		shape-2
-	]
-	(union
-		(case-upper-lip-shapes
 			place-function-1
 			direction-1
 			shape-1
@@ -2273,31 +2491,91 @@
 			place-function-2
 			direction-2
 			shape-2
+		]
+		(union
+			(case-upper-lip-shapes
+				xy-offset
+				z-offset
+
+				place-function-1
+				direction-1
+				shape-1
+
+				place-function-2
+				direction-2
+				shape-2
+			)
+			(case-enclosed-lip-shapes
+				xy-offset
+				z-offset
+
+				place-function-1
+				direction-1
+				shape-1
+
+				place-function-2
+				direction-2
+				shape-2
+			)
 		)
-		(case-enclosed-lip-shapes
+	)
+	(
+		[
+			xy-offset-1
+			z-offset-1
+
 			place-function-1
 			direction-1
 			shape-1
 
+			xy-offset-2
+			z-offset-2
+
 			place-function-2
 			direction-2
 			shape-2
+		]
+		(union
+			(case-upper-lip-shapes
+				xy-offset-1
+				z-offset-1
+
+				place-function-1
+				direction-1
+				shape-1
+
+				xy-offset-2
+				z-offset-2
+
+				place-function-2
+				direction-2
+				shape-2
+			)
+			(case-enclosed-lip-shapes
+				xy-offset-1
+				z-offset-1
+
+				place-function-1
+				direction-1
+				shape-1
+
+				xy-offset-2
+				z-offset-2
+
+				place-function-2
+				direction-2
+				shape-2
+			)
 		)
 	)
 )
 
 (defn wall-and-case-upper-lip-shapes
-	[
-		place-function-1
-		direction-1
-		shape-1
+	(
+		[
+			xy-offset
+			z-offset
 
-		place-function-2
-		direction-2
-		shape-2
-	]
-	(union
-		(case-upper-lip-shapes
 			place-function-1
 			direction-1
 			shape-1
@@ -2305,30 +2583,116 @@
 			place-function-2
 			direction-2
 			shape-2
+		]
+		(union
+			(case-upper-lip-shapes
+				xy-offset
+				z-offset
+
+				place-function-1
+				direction-1
+				shape-1
+
+				place-function-2
+				direction-2
+				shape-2
+			)
+			(hull-to-ground
+				(place-function-1
+					(translate
+						(case-upper-lip-outer-offset xy-offset z-offset direction-1)
+						shape-1
+					)
+				)
+				(place-function-1
+					(translate
+						(case-upper-lip-middle-offset xy-offset z-offset direction-1)
+						shape-1
+					)
+				)
+				(place-function-2
+					(translate
+						(case-upper-lip-outer-offset xy-offset z-offset direction-2)
+						shape-2
+					)
+				)
+				(place-function-2
+					(translate
+						(case-upper-lip-middle-offset xy-offset z-offset direction-2)
+						shape-2
+					)
+				)
+			)
 		)
-		(hull-to-ground
-			(place-function-1
-				(translate
-					(case-upper-lip-outer-offset direction-1)
-					shape-1
-				)
+	)
+	(
+		[
+			xy-offset-1
+			z-offset-1
+			place-function-1
+			direction-1
+			shape-1
+
+			xy-offset-2
+			z-offset-2
+			place-function-2
+			direction-2
+			shape-2
+		]
+		(union
+			(case-upper-lip-shapes
+				xy-offset-1
+				z-offset-1
+				place-function-1
+				direction-1
+				shape-1
+
+				xy-offset-2
+				z-offset-2
+				place-function-2
+				direction-2
+				shape-2
 			)
-			(place-function-1
-				(translate
-					(case-upper-lip-middle-offset direction-1)
-					shape-1
+			(hull-to-ground
+				(place-function-1
+					(translate
+						(case-upper-lip-outer-offset
+							xy-offset-1
+							z-offset-1
+							direction-1
+						)
+						shape-1
+					)
 				)
-			)
-			(place-function-2
-				(translate
-					(case-upper-lip-outer-offset direction-2)
-					shape-2
+				(place-function-1
+					(translate
+						(case-upper-lip-middle-offset
+							xy-offset-1
+							z-offset-1
+							direction-1
+						)
+						shape-1
+					)
 				)
-			)
-			(place-function-2
-				(translate
-					(case-upper-lip-middle-offset direction-2)
-					shape-2
+				(place-function-2
+					(translate
+						(case-upper-lip-outer-offset
+							xy-offset-2
+							z-offset-2
+							direction-2
+						)
+						shape-2
+					)
+				)
+				(place-function-2
+					(translate
+						(case-upper-lip-middle-offset
+							xy-offset-2
+							z-offset-2
+							direction-2
+						)
+						shape-2
+					)
 				)
 			)
 		)
@@ -2336,30 +2700,73 @@
 )
 
 (defn wall-and-case-upper-lip-shapes-between-keys
-	[
-		column-1
-		row-1
-		direction-1
-		shape-1
+	(
+		[
+			xy-offset
+			z-offset
 
-		column-2
-		row-2
-		direction-2
-		shape-2
-	]
-	(wall-and-case-upper-lip-shapes
-		(partial shape-place-at-key column-1 row-1)
-		direction-1
-		shape-1
-		(partial shape-place-at-key column-2 row-2)
-		direction-2
-		shape-2
+			column-1
+			row-1
+			direction-1
+			shape-1
+
+			column-2
+			row-2
+			direction-2
+			shape-2
+		]
+		(wall-and-case-upper-lip-shapes
+			xy-offset
+			z-offset
+
+			(partial shape-place-at-key column-1 row-1)
+			direction-1
+			shape-1
+			(partial shape-place-at-key column-2 row-2)
+			direction-2
+			shape-2
+		)
+	)
+	(
+		[
+			xy-offset-1
+			z-offset-1
+
+			column-1
+			row-1
+			direction-1
+			shape-1
+
+			xy-offset-2
+			z-offset-2
+
+			column-2
+			row-2
+			direction-2
+			shape-2
+		]
+		(wall-and-case-upper-lip-shapes
+			xy-offset-1
+			z-offset-1
+			(partial shape-place-at-key column-1 row-1)
+			direction-1
+			shape-1
+
+			xy-offset-2
+			z-offset-2
+			(partial shape-place-at-key column-2 row-2)
+			direction-2
+			shape-2
+		)
 	)
 )
 
 (defn offset-wall-and-case-upper-lip-shapes-between-keys
 	(
 		[
+			xy-offset
+			z-offset
+
 			column-1
 			row-1
 			direction-1
@@ -2373,6 +2780,9 @@
 			offset
 		]
 		(wall-and-case-upper-lip-shapes
+			xy-offset
+			z-offset
+
 			(fn [shape]
 				(translate offset (shape-place-at-key column-1 row-1 shape))
 			)
@@ -2388,6 +2798,9 @@
 	)
 	(
 		[
+			xy-offset
+			z-offset
+
 			column-1
 			row-1
 			direction-1
@@ -2401,12 +2814,51 @@
 			offset-2
 		]
 		(wall-and-case-upper-lip-shapes
+			xy-offset
+			z-offset
+
 			(fn [shape]
 				(translate offset-1 (shape-place-at-key column-1 row-1 shape))
 			)
 			direction-1
 			shape-1
 
+			(fn [shape]
+				(translate offset-2 (shape-place-at-key column-2 row-2 shape))
+			)
+			direction-2
+			shape-2
+		)
+	)
+	(
+		[
+			xy-offset-1
+			z-offset-1
+			column-1
+			row-1
+			direction-1
+			shape-1
+			offset-1
+
+			xy-offset-2
+			z-offset-2
+			column-2
+			row-2
+			direction-2
+			shape-2
+			offset-2
+		]
+		(wall-and-case-upper-lip-shapes
+			xy-offset-1
+			z-offset-1
+			(fn [shape]
+				(translate offset-1 (shape-place-at-key column-1 row-1 shape))
+			)
+			direction-1
+			shape-1
+
+			xy-offset-2
+			z-offset-2
 			(fn [shape]
 				(translate offset-2 (shape-place-at-key column-2 row-2 shape))
 			)
@@ -2437,7 +2889,26 @@
 	)
 )
 
-(def thumb-cluster-south-east-keyboard-height-offset -25)
+(def thumb-cluster-south-east-keyboard-height-offset
+	(let
+		[
+			[_tcx tcy _tcz]
+				(thumb-cluster-key-get-position
+					thumb-cluster-columns-middle-index
+					thumb-cluster-rows-middle-index
+					[0 0 0]
+				)
+
+			[_bx by _bz]
+				(key-get-position
+					(dec columns-last-index)
+					0
+					[0 0 0]
+				)
+		]
+		(- by tcy)
+	)
+)
 
 (def case-walls
 	(union
@@ -2448,6 +2919,8 @@
 			(union
 				(when (not (= (key-status x 0) :void-no-walls))
 					(offset-wall-and-case-upper-lip-shapes-between-keys
+						(* wall-xy-offset 2)
+						(* wall-z-offset 2)
 						x
 						0
 						:south
@@ -2515,18 +2988,7 @@
 								key-socket-centered-location-dot
 							)
 						)
-						(shape-place-at-key-sockets-absolute
-							(+ x 1)
-							0
-							:bottom-left-corner
-							key-socket-centered-location-dot
-						)
-						(translate
-							[
-								0
-								thumb-cluster-south-east-keyboard-height-offset
-								thumb-cluster-south-east-keyboard-depth-offset
-							]
+						(when (not (= (key-status (+ x 1) 0) :void-no-walls))
 							(shape-place-at-key-sockets-absolute
 								(+ x 1)
 								0
@@ -2534,10 +2996,28 @@
 								key-socket-centered-location-dot
 							)
 						)
+						(when (not (= (key-status (+ x 1) 0) :void-no-walls))
+							(translate
+								[
+									0
+									thumb-cluster-south-east-keyboard-height-offset
+									thumb-cluster-south-east-keyboard-depth-offset
+								]
+								(shape-place-at-key-sockets-absolute
+									(+ x 1)
+									0
+									:bottom-left-corner
+									key-socket-centered-location-dot
+								)
+							)
+						)
 					)
 				)
 				(when (not (= (key-status x rows-last-index) :void-no-walls))
 					(wall-and-case-upper-lip-shapes-between-keys
+						wall-xy-offset
+						wall-z-offset
+
 						x
 						rows-last-index
 						:north
@@ -2565,33 +3045,41 @@
 			[x (range 1 columns-count)]
 			;; TODO: Account for (get-key-status ...)
 			(union
-				(offset-wall-and-case-upper-lip-shapes-between-keys
-					x
-					0
-					:south
-					(shape-place-at-key-sockets-relative
+				(when (not (== x (dec columns-count)))
+					(offset-wall-and-case-upper-lip-shapes-between-keys
+						(* wall-xy-offset 2)
+						(* wall-z-offset 2)
+
 						x
 						0
-						:bottom-left-corner
-						key-socket-centered-location-dot
-					)
+						:south
+						(shape-place-at-key-sockets-relative
+							x
+							0
+							:bottom-left-corner
+							key-socket-centered-location-dot
+						)
 
-					(dec x)
-					0
-					:south
-					(shape-place-at-key-sockets-relative
 						(dec x)
 						0
-						:bottom-right-corner
-						key-socket-centered-location-dot
+						:south
+						(shape-place-at-key-sockets-relative
+							(dec x)
+							0
+							:bottom-right-corner
+							key-socket-centered-location-dot
+						)
+						[
+							0
+							thumb-cluster-south-east-keyboard-height-offset
+							thumb-cluster-south-east-keyboard-depth-offset
+						]
 					)
-					[
-						0
-						-25
-						thumb-cluster-south-east-keyboard-depth-offset
-					]
 				)
 				(wall-and-case-upper-lip-shapes-between-keys
+					wall-xy-offset
+					wall-z-offset
+
 					x
 					rows-last-index
 					:north
@@ -2620,6 +3108,9 @@
 			;; TODO: Account for (get-key-status ...)
 			(union
 				(wall-and-case-upper-lip-shapes-between-keys
+					wall-xy-offset
+					wall-z-offset
+
 					0
 					y
 					:west
@@ -2640,8 +3131,11 @@
 						key-socket-centered-location-dot
 					)
 				)
-				(when (key-is-not-void? columns-last-index y)
+				(when (not (= (key-status columns-last-index y) :void-no-walls))
 					(wall-and-case-upper-lip-shapes-between-keys
+						wall-xy-offset
+						wall-z-offset
+
 						columns-last-index
 						y
 						:east
@@ -2670,6 +3164,9 @@
 			;; TODO: Account for (get-key-status ...)
 			(union
 				(wall-and-case-upper-lip-shapes-between-keys
+					wall-xy-offset
+					wall-z-offset
+
 					0
 					y
 					:west
@@ -2690,8 +3187,11 @@
 						key-socket-centered-location-dot
 					)
 				)
-				(when (key-is-not-void? columns-last-index y)
+				(when (not (= (key-status columns-last-index y) :void-no-walls))
 					(wall-and-case-upper-lip-shapes-between-keys
+						wall-xy-offset
+						wall-z-offset
+
 						columns-last-index
 						y
 						:east
@@ -2721,6 +3221,9 @@
 		;; border keys aren't reflected as a result.
 		;; FIXME: need a proper version of this.
 		(wall-and-case-upper-lip-shapes-between-keys
+			wall-xy-offset
+			wall-z-offset
+
 			columns-last-index
 			rows-last-index
 			:north
@@ -2742,6 +3245,9 @@
 			)
 		)
 		(wall-and-case-upper-lip-shapes-between-keys
+			wall-xy-offset
+			wall-z-offset
+
 			0
 			rows-last-index
 			:north
@@ -2763,6 +3269,9 @@
 			)
 		)
 		(offset-wall-and-case-upper-lip-shapes-between-keys
+			(* wall-xy-offset 2)
+			(* wall-z-offset 2)
+
 			0
 			0
 			:south
@@ -2789,6 +3298,38 @@
 			]
 		)
 		(offset-wall-and-case-upper-lip-shapes-between-keys
+			(* wall-xy-offset 2)
+			(* wall-z-offset 2)
+
+			(dec columns-last-index)
+			0
+			:south
+			(shape-place-at-key-sockets-relative
+				columns-last-index
+				0
+				:bottom-right-corner
+				key-socket-centered-location-dot
+			)
+
+			(dec columns-last-index)
+			0
+			:east
+			(shape-place-at-key-sockets-relative
+				(dec columns-last-index)
+				0
+				:bottom-right-corner
+				key-socket-centered-location-dot
+			)
+			[
+				0
+				thumb-cluster-south-east-keyboard-height-offset
+				thumb-cluster-south-east-keyboard-depth-offset
+			]
+		)
+		(offset-wall-and-case-upper-lip-shapes-between-keys
+			wall-xy-offset
+			wall-z-offset
+
 			0
 			0
 			:west
@@ -2804,6 +3345,8 @@
 				0
 			]
 
+			(* wall-xy-offset 2)
+			(* wall-z-offset 2)
 			0
 			0
 			:west
@@ -2828,49 +3371,92 @@
 			[x thumb-cluster-columns-index-list]
 			;; TODO: Account for (get-key-status ...)
 			(union
-				;; south lip
-				(case-upper-and-enclosed-lip-shapes
-					(partial shape-place-at-thumb-cluster-key x 0)
-					:south
-					(shape-place-at-thumb-cluster-key-sockets-relative
-						x
-						0
-						:bottom-left-corner
-						key-socket-centered-location-dot
-					)
+				(let
+					[
+						lip-multiplier-a (if (== x 0) 1 2.6)
+						lip-multiplier-b (if (== (dec x) 0) 1 2.6)
+					]
+					(union
+						;; south lip
+						(if (== x thumb-cluster-columns-last-index)
+							(case-upper-lip-shapes
+								(* lip-multiplier-a wall-xy-offset)
+								(* lip-multiplier-a wall-z-offset)
 
-					(partial shape-place-at-thumb-cluster-key x 0)
-					:south
-					(shape-place-at-thumb-cluster-key-sockets-relative
-						x
-						0
-						:bottom-right-corner
-						key-socket-centered-location-dot
-					)
-				)
-				(when (not (= (thumb-cluster-key-status (dec x) 0) :void))
-					(case-upper-and-enclosed-lip-shapes
-						(partial shape-place-at-thumb-cluster-key (dec x) 0)
-						:south
-						(shape-place-at-thumb-cluster-key-sockets-relative
-							(dec x)
-							0
-							:bottom-right-corner
-							key-socket-centered-location-dot
+								(partial shape-place-at-thumb-cluster-key x 0)
+								:south
+								(shape-place-at-thumb-cluster-key-sockets-relative
+									x
+									0
+									:bottom-left-corner
+									key-socket-centered-location-dot
+								)
+
+								(partial shape-place-at-thumb-cluster-key x 0)
+								:south
+								(shape-place-at-thumb-cluster-key-sockets-relative
+									x
+									0
+									:bottom-right-corner
+									key-socket-centered-location-dot
+								)
+							)
+							(case-upper-and-enclosed-lip-shapes
+								(* lip-multiplier-a wall-xy-offset)
+								(* lip-multiplier-a wall-z-offset)
+
+								(partial shape-place-at-thumb-cluster-key x 0)
+								:south
+								(shape-place-at-thumb-cluster-key-sockets-relative
+									x
+									0
+									:bottom-left-corner
+									key-socket-centered-location-dot
+								)
+
+								(partial shape-place-at-thumb-cluster-key x 0)
+								:south
+								(shape-place-at-thumb-cluster-key-sockets-relative
+									x
+									0
+									:bottom-right-corner
+									key-socket-centered-location-dot
+								)
+							)
 						)
+						(when (not (= (thumb-cluster-key-status (dec x) 0) :void))
+							(case-upper-and-enclosed-lip-shapes
+								(* lip-multiplier-b wall-xy-offset)
+								(* lip-multiplier-b wall-z-offset)
 
-						(partial shape-place-at-thumb-cluster-key x 0)
-						:south
-						(shape-place-at-thumb-cluster-key-sockets-relative
-							x
-							0
-							:bottom-left-corner
-							key-socket-centered-location-dot
+								(partial shape-place-at-thumb-cluster-key (dec x) 0)
+								:south
+								(shape-place-at-thumb-cluster-key-sockets-relative
+									(dec x)
+									0
+									:bottom-right-corner
+									key-socket-centered-location-dot
+								)
+
+								(* lip-multiplier-a wall-xy-offset)
+								(* lip-multiplier-a wall-z-offset)
+								(partial shape-place-at-thumb-cluster-key x 0)
+								:south
+								(shape-place-at-thumb-cluster-key-sockets-relative
+									x
+									0
+									:bottom-left-corner
+									key-socket-centered-location-dot
+								)
+							)
 						)
 					)
 				)
 				;; north lip
 				(case-upper-and-enclosed-lip-shapes
+					wall-xy-offset
+					wall-z-offset
+
 					(partial
 						shape-place-at-thumb-cluster-key
 						x
@@ -2908,6 +3494,9 @@
 						)
 					)
 					(case-upper-and-enclosed-lip-shapes
+						wall-xy-offset
+						wall-z-offset
+
 						(partial
 							shape-place-at-thumb-cluster-key
 							(dec x)
@@ -2943,6 +3532,9 @@
 			(union
 				;; lip on "left" side
 				(case-upper-and-enclosed-lip-shapes
+					wall-xy-offset
+					wall-z-offset
+
 					(partial shape-place-at-thumb-cluster-key 0 y)
 					:west
 					(shape-place-at-thumb-cluster-key-sockets-relative
@@ -2963,6 +3555,9 @@
 				)
 				(when (not (= (thumb-cluster-key-status 0 (dec y)) :void))
 					(case-upper-and-enclosed-lip-shapes
+						wall-xy-offset
+						wall-z-offset
+
 						(partial shape-place-at-thumb-cluster-key 0 (dec y))
 						:west
 						(shape-place-at-thumb-cluster-key-sockets-relative
@@ -2985,6 +3580,9 @@
 			)
 		)
 		(case-upper-lip-shapes
+			wall-xy-offset
+			wall-z-offset
+
 			(partial shape-place-at-thumb-cluster-key 0 0)
 			:west
 			(shape-place-at-thumb-cluster-key-sockets-relative
@@ -3004,6 +3602,9 @@
 			)
 		)
 		(case-enclosed-lip-shapes
+			wall-xy-offset
+			wall-z-offset
+
 			(partial shape-place-at-thumb-cluster-key 0 0)
 			:west
 			(shape-place-at-thumb-cluster-key-sockets-relative
@@ -3023,6 +3624,9 @@
 			)
 		)
 		(case-upper-lip-shapes
+			wall-xy-offset
+			wall-z-offset
+
 			(partial
 				shape-place-at-thumb-cluster-key
 				0
@@ -3050,6 +3654,9 @@
 			)
 		)
 		(case-enclosed-lip-shapes
+			wall-xy-offset
+			wall-z-offset
+
 			(partial
 				shape-place-at-thumb-cluster-key
 				0
@@ -3081,6 +3688,48 @@
 
 (def thumb-cluster-to-keyboard-connecting-shape
 	(union
+		(hull-to-ground
+			(thumb-cluster-key-socket-place-absolute-dot
+				thumb-cluster-columns-last-index
+				0
+				:top-right-corner
+			)
+			(thumb-cluster-key-socket-place-absolute-dot
+				thumb-cluster-columns-last-index
+				0
+				:bottom-right-corner
+			)
+		)
+		(hull-to-ground
+			(case-upper-lip-shapes
+				(* 2.6 wall-xy-offset)
+				(* 2.6 wall-z-offset)
+
+				(partial shape-place-at-thumb-cluster-key
+					thumb-cluster-columns-last-index
+					0
+				)
+				:south
+				(shape-place-at-thumb-cluster-key-sockets-relative
+					thumb-cluster-columns-last-index
+					0
+					:bottom-left-corner
+					key-socket-centered-location-dot
+				)
+
+				(partial shape-place-at-thumb-cluster-key
+					thumb-cluster-columns-last-index
+					0
+				)
+				:south
+				(shape-place-at-thumb-cluster-key-sockets-relative
+					thumb-cluster-columns-last-index
+					0
+					:bottom-right-corner
+					key-socket-centered-location-dot
+				)
+			)
+		)
 		(hull-triangle-mesh
 			(shape-place-at-thumb-cluster-key-sockets-absolute
 				thumb-cluster-columns-last-index
@@ -3102,8 +3751,8 @@
 			)
 			(shape-place-at-key-sockets-absolute
 				columns-last-index
-				rows-middle-index
-				:bottom-right-corner
+				(dec rows-middle-index)
+				:top-right-corner
 				(rotate (/ pi 2) [0 1 0] key-socket-centered-location-dot)
 			)
 			(shape-place-at-thumb-cluster-key-sockets-absolute
@@ -3111,6 +3760,12 @@
 				(dec thumb-cluster-rows-last-index)
 				:top-right-corner
 				key-socket-centered-location-dot
+			)
+			(shape-place-at-key-sockets-absolute
+				columns-last-index
+				(dec rows-middle-index)
+				:bottom-right-corner
+				(rotate (/ pi 2) [0 1 0] key-socket-centered-location-dot)
 			)
 			(shape-place-at-thumb-cluster-key-sockets-absolute
 				thumb-cluster-columns-last-index
@@ -3120,6 +3775,9 @@
 			)
 		)
 		(case-upper-and-enclosed-lip-shapes
+			wall-xy-offset
+			wall-z-offset
+
 			(partial
 				shape-place-at-thumb-cluster-key
 				thumb-cluster-columns-last-index
@@ -3158,6 +3816,58 @@
 				key-socket-centered-location-dot
 			)
 		)
+		(hull-triangle-mesh
+			(shape-place-at-key-sockets-absolute
+				(dec columns-last-index)
+				rows-middle-index
+				:top-right-corner
+				key-socket-centered-location-dot
+			)
+			(shape-place-at-key-sockets-absolute
+				(dec columns-last-index)
+				rows-middle-index
+				:bottom-right-corner
+				key-socket-centered-location-dot
+			)
+			(shape-place-at-key-sockets-absolute
+				columns-last-index
+				rows-middle-index
+				:top-right-corner
+				key-socket-centered-location-dot
+			)
+			(shape-place-at-key-sockets-absolute
+				columns-last-index
+				rows-middle-index
+				:bottom-right-corner
+				key-socket-centered-location-dot
+			)
+		)
+		(hull-triangle-mesh
+			(shape-place-at-key-sockets-absolute
+				(dec columns-last-index)
+				(+ rows-middle-index 1)
+				:bottom-right-corner
+				key-socket-centered-location-dot
+			)
+			(shape-place-at-key-sockets-absolute
+				columns-last-index
+				(+ rows-middle-index 1)
+				:bottom-right-corner
+				key-socket-centered-location-dot
+			)
+			(shape-place-at-key-sockets-absolute
+				(dec columns-last-index)
+				rows-middle-index
+				:top-right-corner
+				key-socket-centered-location-dot
+			)
+			(shape-place-at-key-sockets-absolute
+				columns-last-index
+				rows-middle-index
+				:top-right-corner
+				key-socket-centered-location-dot
+			)
+		)
 	)
 )
 
@@ -3180,7 +3890,7 @@
 		0
 		0
 		(map -
-			(case-upper-lip-outer-offset :north)
+			(case-upper-lip-outer-offset wall-xy-offset wall-z-offset :north)
 			[0 (/ key-sockets-1u-outer-height 2) 0]
 		)
 	)
